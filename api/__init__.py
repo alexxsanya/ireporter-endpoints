@@ -1,27 +1,6 @@
-from flask import Blueprint
+from flask import Flask
+from view import bluep
 
-bluep = Blueprint("api",__name__,url_prefix='/api/v1')
+app = Flask(__name__) 
 
-@bluep.route('/red-flags', method="GET")
-def get_all_red_flags():
-    pass
-
-@bluep.route('/red-flags/<int:red_flag_id>', method = "GET")
-def get_this_red_flag(red_flag_id):
-    pass
-
-@bluep.route('/red-flags', method = "POST")
-def create_this_red_flag():
-    pass
-
-@bluep.route('/red-flags/<int:red_flag_id>/location', method = "PATCH")
-def update_red_flag_location(red_flag_id,location):
-    pass
-
-@bluep.route('/red-flags/<int:red_flag_id>/comment', method = "PATCH")
-def update_red_flag_comment(red_flag_id, comment):
-    pass
-
-@bluep.route('/red-flags/<int:red_flag_id>', method = "DELETE")
-def delete_red_flag(red_flag_id):
-    pass
+app.register_blueprint(bluep, url_prefix="/api/v1")
