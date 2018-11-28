@@ -4,7 +4,7 @@ bluep = Blueprint("bluep", __name__)
 
 @bluep.route('/redflags', methods=['GET'])
 def get_all_red_flags():
-    pass
+    return "ffd"
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['GET'])
 def get_this_red_flag(red_flag_id):
