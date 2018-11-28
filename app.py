@@ -1,8 +1,3 @@
-from api import bluep
-from flask import Flask 
+from api.__init__ import app 
 
-
-app = Flask(__name__, instance_relative_config=True)
-
-if __name__ == "__main__": 
-    app.run(DEBUG = True)
+app.run()
