@@ -25,7 +25,13 @@ def update_red_flag_comment(red_flag_id, comment):
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['DELETE'])
 def delete_red_flag(red_flag_id):
-    pass
+    for incident in incidents:
+        if(incident['idd'] == red_flag_id):
+            incidents.remove[incident]
+            response = {'status':200,'data': [{'id':red_flag_id,'message':"red flag record has been deleted"}]}
+            return jsonify( response )
+        else:
+            return jsonify({'status':400,'data': [{'id':red_flag_id,'message':'wrong record id was provided'}]}) 
 
 incidents = [
     {
