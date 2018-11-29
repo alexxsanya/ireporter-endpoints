@@ -17,7 +17,23 @@ def create_this_red_flag():
 
 @bluep.route('/redflags/<int:red_flag_id>/location', methods = ['PATCH'])
 def update_red_flag_location(red_flag_id,location):
-    pass
+    request_data = request.get_json()
+    
+    updated_incident = {}
+
+    if ("location" in request_data):
+
+        updated_incident["location"] = request_data["location"] 
+
+    for red_flag in incidents:
+
+        if red_flag["idd"] == red_flag_id:
+
+            red_flag.update(updated_incident) 
+
+    response = Response("", status="204") 
+
+    return response
 
 @bluep.route('/redflags/<int:red_flag_id>/comment', methods = ['PATCH'])
 def update_red_flag_comment(red_flag_id, comment):
