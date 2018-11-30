@@ -5,7 +5,7 @@ bluep = Blueprint("bluep", __name__)
 
 @bluep.route('/redflags', methods=['GET'])
 def get_all_red_flags():
-     pass
+    return jsonify({'status':200,'data': incidents})
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['GET'])
 def get_this_red_flag(red_flag_id):
@@ -13,15 +13,71 @@ def get_this_red_flag(red_flag_id):
 
 @bluep.route('/redflags', methods = ['POST'])
 def create_this_red_flag():
-    pass
+    request_data  = request.get_json()
+    if (incidentObject(request_data)):
+        incident = { 
+            "idd": 4,
+            "title" : request_data['title'],
+            "ttype" : request_data['ttype'],
+            "comment" : request_data['comment'],
+            "location" : request_data['location'],
+            "images" : request_data['images'],
+            "status" : request_data['status'],
+            "createdOn" : str(datetime.datetime.now())[:10],
+            "createdBy" : request_data['createdBy'],
+        }
+        incidents.append(incident)
+        response = Response("", 201, mimetype="application/json") 
+        return response
+    else:
+        bad_object = {
+            "error": "Invalid Incident object",
+            "help_string":
+                "Request format should be {'title': 'corrupt president',"
+                "'ttype': 'red-flag','status': 'pending' }"
+        }
+        response = Response(json.dumps(bad_object), status=400, mimetype="appliation/json")
+        return response
 
 @bluep.route('/redflags/<int:red_flag_id>/location', methods = ['PATCH'])
 def update_red_flag_location(red_flag_id,location):
-    pass
+    request_data = request.get_json()
+
+    updated_incident = {}
+
+    if ("location" in request_data):
+
+        updated_incident["location"] = request_data["location"] 
+
+    for red_flag in incidents:
+
+        if red_flag["idd"] == red_flag_id:
+
+            red_flag.update(updated_incident) 
+
+    response = Response("", status="204") 
+
+    return response
 
 @bluep.route('/redflags/<int:red_flag_id>/comment', methods = ['PATCH'])
 def update_red_flag_comment(red_flag_id, comment):
-    pass
+    request_data = request.get_json()
+    
+    updated_incident = {}
+
+    if ("comment" in request_data):
+
+        updated_incident["comment"] = request_data["comment"] 
+
+    for red_flag in incidents:
+
+        if red_flag["idd"] == red_flag_id:
+
+            red_flag.update(updated_incident) 
+
+    response = Response("", status="204") 
+
+    return response
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['DELETE'])
 def delete_red_flag(red_flag_id):
@@ -32,6 +88,12 @@ def delete_red_flag(red_flag_id):
             return jsonify( response )
         else:
             return jsonify({'status':400,'data': [{'id':red_flag_id,'message':'wrong record id was provided'}]}) 
+
+def valid_incident(incidentObject):
+    if "idd" in incidentObject and "type" in incidentObject and "status" in incidentObject:
+        return True
+    else:
+        return False
 
 incidents = [
     {
