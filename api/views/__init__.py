@@ -9,11 +9,7 @@ def get_all_red_flags():
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['GET'])
 def get_this_red_flag(red_flag_id):
-    incident = {}
-    for item in incidents:
-        if item['idd'] == red_flag_id:
-            incident = item 
-    return jsonify({'status':200,'data': incident})
+    pass
 
 @bluep.route('/redflags', methods = ['POST'])
 def create_this_red_flag():
