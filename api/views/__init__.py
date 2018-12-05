@@ -64,7 +64,7 @@ def update_red_flag_location(red_flag_id,location):
     return response
 
 @bluep.route('/redflags/<int:red_flag_id>/comment', methods = ['PATCH'])
-def update_red_flag_comment(red_flag_id, comment):
+def update_red_flag_comment(red_flag_id):
     request_data = request.get_json()
     
     updated_incident = {}
@@ -81,7 +81,7 @@ def update_red_flag_comment(red_flag_id, comment):
 
     response = Response("", status="204") 
 
-    return response
+    return jsonify({'status':204,'comment': "update successful"})
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['DELETE'])
 def delete_red_flag(red_flag_id):
