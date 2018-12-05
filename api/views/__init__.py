@@ -1,5 +1,5 @@
 from flask import Blueprint,jsonify, request, Response
-import datetime
+import datetime,json
 
 bluep = Blueprint("bluep", __name__)
 
@@ -17,8 +17,8 @@ def get_this_red_flag(red_flag_id):
 
 @bluep.route('/redflags', methods = ['POST'])
 def create_this_red_flag():
-    request_data  = request.get_json()
-    if (incidentObject(request_data)):
+    request_data  = request.get_json() 
+    if (valid_incident(request_data)):
         incident = { 
             "idd": 4,
             "title" : request_data['title'],
@@ -94,7 +94,7 @@ def delete_red_flag(red_flag_id):
             return jsonify({'status':400,'data': [{'id':red_flag_id,'message':'wrong record id was provided'}]}) 
 
 def valid_incident(incidentObject):
-    if "idd" in incidentObject and "type" in incidentObject and "status" in incidentObject:
+    if "idd" in incidentObject and "ttype" in incidentObject and "status" in incidentObject:
         return True
     else:
         return False
