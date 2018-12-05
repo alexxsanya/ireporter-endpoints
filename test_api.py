@@ -1,7 +1,7 @@
 import pytest
 
 @pytest.mark.usefixtures('client_class')
-class TestLogin:  
+class TestPostGetAPI:  
 
     def test_apis_return_200_with_valid_parameter(self,client):
         assert 1 == 1
@@ -50,4 +50,21 @@ class TestLogin:
                                 json=incident_data,
                                 content_type='application/json')  
         assert response.status_code == 201, "Incident is created"                                  
-    
+
+@pytest.mark.usefixtures('client_class')
+class TestUpdateAPI:
+    def test_api_updates_comment_returns_doesnt_no_content_when_success(self,client):
+        #test whether api returns data when the api execution has been successful
+        comment = {"comment":"Hello World"}
+        response = client.patch('/api/v1/redflags/1/comment',                                
+                                json=comment,
+                                content_type='application/json')
+        assert response.status_code != 204 # 204 means execution on the server is success but no data is returned
+
+    def test_api_updates_comment_returns_content_when_success(self,client):
+        #test whether api returns no content back to the user to confirm to him that the api was a success
+        comment = {"comment":"Hello World"}
+        response = client.patch('/api/v1/redflags/1/comment',                                
+                                json=comment,
+                                content_type='application/json')
+        assert response.status_code == 200
