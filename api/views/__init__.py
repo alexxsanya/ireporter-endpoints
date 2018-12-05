@@ -46,42 +46,47 @@ def create_this_red_flag():
 @bluep.route('/redflags/<int:red_flag_id>/location', methods = ['PATCH'])
 def update_red_flag_location(red_flag_id,location):
     request_data = request.get_json()
-
+    
     updated_incident = {}
+    updated = False
 
     if ("location" in request_data):
 
         updated_incident["location"] = request_data["location"] 
 
-    for red_flag in incidents:
+        for red_flag in incidents:
 
-        if red_flag["idd"] == red_flag_id:
+            if red_flag["idd"] == red_flag_id:
 
-            red_flag.update(updated_incident) 
-
-    response = Response("", status="204") 
-
-    return response
+                red_flag.update(updated_incident) 
+                updated = True
+    if updated:
+        return jsonify({'status':200,'comment': "update successful"})
+    else:
+        return jsonify({'status':405,'comment': "Not Updated",'Tip':"provided incident id could be wrong"})
 
 @bluep.route('/redflags/<int:red_flag_id>/comment', methods = ['PATCH'])
 def update_red_flag_comment(red_flag_id):
     request_data = request.get_json()
     
     updated_incident = {}
+    updated = False
 
     if ("comment" in request_data):
 
         updated_incident["comment"] = request_data["comment"] 
 
-    for red_flag in incidents:
+        for red_flag in incidents:
 
-        if red_flag["idd"] == red_flag_id:
+            if red_flag["idd"] == red_flag_id:
 
-            red_flag.update(updated_incident) 
-
-    response = Response("", status="204") 
-
-    return jsonify({'status':204,'comment': "update successful"})
+                red_flag.update(updated_incident) 
+                updated = True
+    if updated:
+        return jsonify({'status':200,'comment': "update successful"})
+    else:
+        return jsonify({'status':405,'comment': "Not Updated",'Tip':"provided incident id could be wrong"})
+    
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['DELETE'])
 def delete_red_flag(red_flag_id):
