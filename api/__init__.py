@@ -1,5 +1,5 @@
 from flask import Flask
-from views import bluep
+from views.__ini__ import bluep
 
 app = Flask(__name__) 
 
