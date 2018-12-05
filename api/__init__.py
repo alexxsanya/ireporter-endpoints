@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask 
 from views.__init__ import bluep
 
 app = Flask(__name__) 
