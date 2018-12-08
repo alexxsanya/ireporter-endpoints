@@ -2,6 +2,46 @@ from flask import Blueprint,jsonify, request, Response
 import datetime,json
 
 bluep = Blueprint("bluep", __name__)
+@bluep.route('/user', methods = ['POST'])
+def create_user():
+    request_data  = request.get_json() 
+
+    if request_data != None or request_data != {}: #fisrt checking if data has been passed to the request
+        if (valid_user(request_data)):
+            user = { 
+                "id": 4,
+                "firstname" : request_data['firstname'],
+                "lastname" : request_data['lastname'],
+                "othername" : request_data['othername'],
+                "email" : request_data['email'],
+                "username" : request_data['username'],
+                "phoneNumber" : request_data['phoneNumber'],
+                "registered" : str(datetime.datetime.now()),
+                "isAdmin" : request_data['isAdmin'],
+            }
+            users.append(user)
+            success_status_object = {
+                "status" : 201,
+                "comment": b"User - "+ str({request_data['username']}) +"has been created"
+            }
+            response = Response(json.dumps(success_status_object), 201, mimetype="application/json") 
+            return response
+        else:
+            bad_object = {
+                "error": "Invalid Incident object",
+                "help_string":
+                    "Request format should be {'username': 'jonh2',"
+                    "'fistname': 'John','lastname': 'Doe' ... }"
+            }
+            response = Response(json.dumps(bad_object), status=400, mimetype="appliation/json")
+            return response
+    else:
+        err_status_object = {
+            "status" : 800,
+            "comment": "Error - No data has be passed"
+        }
+        response = Response(json.dumps(err_status_object), 801, mimetype="application/json")  
+        return response       
 
 @bluep.route('/redflags', methods=['GET'])
 def get_all_red_flags():
@@ -104,6 +144,12 @@ def valid_incident(incidentObject):
     else:
         return False
 
+def valid_user(userObject):
+    if "firstname" in userObject and "email" in userObject and "registered" in userObject:
+        return True
+    else:
+        False
+
 incidents = [
     {
         "idd": 1,
@@ -137,5 +183,19 @@ incidents = [
         "status" : "under investigation",
         "createdOn" : str(datetime.datetime.now())[:10],
         "createdBy" : 4
+    }
+]
+
+users = [
+    {
+        "id": 1, #integer
+        "firstname" : "Alex",
+        "lastname" : "Ssanya",
+        "othername" : "",
+        "email" : "alexxsanya@gmail.com",
+        "phoneNumber" : "+256702342257",
+        "username" : "draft",
+        "registered" : str(datetime.datetime.now()), #TimeTamp
+        "isAdmin" : False # Boolean
     }
 ]
