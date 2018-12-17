@@ -1,4 +1,4 @@
-from flask import Flask 
+from flask import Flask, render_template
 from api.views.__init__ import bluep
 
 app = Flask(__name__) 
@@ -9,7 +9,7 @@ app = Flask(__name__)
 @app.route('/api/v1')
 @app.route('/api/v1/')
 def usage_guide():
-    return "<br /><h2 align='center'>Click <a href='https://github.com/alexxsanya/ireporter-endpoints/blob/develop/README.md'>Here</a> for guidance on how to use this API</h2>"
+    return render_template("usage.html") 
 
 
 app.register_blueprint(bluep, url_prefix="/api/v1")
