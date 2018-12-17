@@ -1,8 +1,6 @@
 [tool:pytest]
 
 [coverage:run]
-branch = True
-include = */api/*, */test_api.py*, 
 omit =
     */python?.?/* 
     */__pycache__/*
