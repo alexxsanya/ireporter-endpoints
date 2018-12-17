@@ -2,5 +2,10 @@
 
 [coverage:run]
 branch = True
-include = */api/*, */test_api.py*,
-omit = *venv*, *.pytest_cache*,*__pycache__*
+include = */api/*, */test_api.py*, 
+omit =
+    */python?.?/* 
+    */__pycache__/*
+    *.pyc
+    */venv/*
+    */.pytest_cache/*,
