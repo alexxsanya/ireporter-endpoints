@@ -1,7 +1,6 @@
-[report]
-omit =
-    */python?.?/*
-    */site-packages/nose/*
-    */__pycache__/*
-    *.pyc
-    */venv/*
+[tool:pytest]
+
+[coverage:run]
+branch = True
+include = */api/*, */test_api.py*, */app.py*,
+omit = *venv*, *.pytest_cache*,*__pycache__*
