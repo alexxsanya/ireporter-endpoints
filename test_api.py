@@ -20,7 +20,7 @@ class TestPostGetAPI:
         response = client.post('/api/v1/redflags',
                                 data="This isn't a json... it's a string!",
                                 content_type='application/json')
-        assert response.status_code == 400, "the passed data should be of application\json"
+        assert response.status_code == 400, "the passed data should be of application-json"
         assert b'400 Bad Request' in response.data
 
     def test_create_this_red_flag_return_success_when_provided_with_valid_json(self,client):
