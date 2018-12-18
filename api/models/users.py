@@ -1,6 +1,6 @@
 import datetime,json
 class Users:
-    userdb = users = [
+    userdb =[
     {
         "id": 1, #integer
         "firstname" : "Alex",
