@@ -15,13 +15,6 @@ class TestPostGetAPI:
     def test_if_get_api_with_invalid_par_return_404_not_found(self,client):
         assert b'404 Not Found' in client.get("/api/v1/redflags/1n64").data 
 
-    '''def test_that_valid_JSON_is_passed_to_api(self,client):
-        """Test status code 405 from improper JSON on post to raw"""
-        response = client.post('/redflags',
-                                data="This isn't a json... it's a string!",
-                                content_type='application/json')
-        assert response.status_code == 405, "This provided data should be a json object" '''
-
     def test__post_api_return_bad_request_400_with_wrong_requests(self,client):
         #testing for bad request when given invalid json parameters 400 Bad Request
         response = client.post('/api/v1/redflags',
