@@ -36,8 +36,14 @@ def create_user():
         }), status=400, mimetype="appliation/json") 
 
 @bluep.route('/redflags', methods=['GET'])
-def get_all_red_flags():
-    return jsonify({'status':200,'data': incidents})
+def get_all_red_flags(): 
+        if len(incidents) <= 0:
+            return jsonify({
+                "Status": 404,
+                "error": "No incident records in the database yet"
+            }), 404
+        else:
+            return jsonify({'status':200,'data': incidents})
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['GET'])
 def get_this_red_flag(red_flag_id):  
