@@ -7,7 +7,7 @@ before_success:
   - coveralls
   - coverage 
 script: 
-  - py.test .\tests --cov --cov-report term-missing
+  - pytest tests --cov --cov-report term-missing
   - coverage 
   - coveralls 
 after_success:
