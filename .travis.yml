@@ -10,6 +10,7 @@ script:
   - pytest tests --cov --cov-report term-missing
   - coverage 
   - coveralls 
+  - cc-test-reporter
 after_success:
   - coveralls
   - coverage 
