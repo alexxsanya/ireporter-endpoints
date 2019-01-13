@@ -9,8 +9,7 @@ before_success:
 script: 
   - pytest tests --cov --cov-report term-missing
   - coverage 
-  - coveralls 
-  - cc-test-reporter
+  - coveralls  
 after_success:
   - coveralls
   - coverage 
