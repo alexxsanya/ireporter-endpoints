@@ -5,8 +5,8 @@ from api.models.users import Users
 from api.utility.validate_incident import IncidentValidator
 from api.utility.validate_user import UserValidator
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import (create_access_token)
-
+#from flask_jwt_extended import (create_access_token)
+from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 bluep = Blueprint("bluep", __name__)
 incidents = Incidents.incidentsdb
 users  = Users.userdb 
@@ -53,10 +53,13 @@ def create_user():
         "registered" : str(datetime.datetime.now()),
         "isAdmin" : user_data_object['isAdmin'],
     })
+    access_token = create_access_token(identity = user_data_object['username'])
+    refresh_token = create_refresh_token(identity = user_data_object['username'])
     return Response(json.dumps({
         "status" : 201,
         "comment": "User - "+ str(user_data_object['username']) +"has been created",
-        "data": users
+        "access_token": access_token,
+        'refresh_token': refresh_token
     }), 201, mimetype="application/json")  
 
 @bluep.route('/login', methods = ['POST'])
@@ -72,17 +75,21 @@ def login_user():
         print(check_password_hash(user['password'], password))
         print(user['username'] == username)
         if user['username'] == username and check_password_hash(user['password'], password):
-            access_token = create_access_token(username)
+            #access_token = create_access_token(username)
+            access_token = create_access_token(identity = username)
+            refresh_token = create_refresh_token(identity = username)
             print(user)
             return jsonify({
                 "status": 200,
                 "status": "Login successful",
-                "data": [access_token]
+                "access_token": access_token,
+                'refresh_token': refresh_token
             }), 200
 
         return jsonify({"status": 404, "error": "Invalid username or password"}), 404
 
 @bluep.route('/redflags', methods=['GET'])
+@jwt_required
 def get_all_red_flags(): 
         if len(incidents) <= 0:
             return jsonify({
@@ -93,6 +100,7 @@ def get_all_red_flags():
             return jsonify({'status':200,'data': incidents})
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['GET'])
+@jwt_required
 def get_this_red_flag(red_flag_id):   
     result = [item for item in incidents if item['idd'] == red_flag_id]
     if result != []:
@@ -101,6 +109,7 @@ def get_this_red_flag(red_flag_id):
         return jsonify({'status':200,'message':"No data found for the provided ID"})    
 
 @bluep.route('/redflags', methods = ['POST'])
+@jwt_required
 def create_this_red_flag(): 
     redflag_data = request.get_json()
     if (incidentValidator.validate_incident(redflag_data)):
@@ -122,6 +131,7 @@ def create_this_red_flag():
             }), 201
 
 @bluep.route('/redflags/<int:red_flag_id>/location', methods = ['PATCH'])
+@jwt_required
 def update_red_flag_location(red_flag_id):
     location_data = request.get_json()
     
@@ -144,6 +154,7 @@ def update_red_flag_location(red_flag_id):
         return jsonify({'status':204,'error': "Location not modified"})
 
 @bluep.route('/redflags/<int:red_flag_id>/comment', methods = ['PATCH'])
+@jwt_required
 def update_red_flag_comment(red_flag_id):
     request_data = request.get_json()
     
@@ -166,6 +177,7 @@ def update_red_flag_comment(red_flag_id):
         return jsonify({'status':200,'comment': "Comment has not been modified", 'tip':'cross-check the user id'})
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['DELETE'])
+@jwt_required
 def delete_red_flag(red_flag_id):
     try:
         flag_to_delete = [flag for flag in incidents if flag['idd'] == red_flag_id]
