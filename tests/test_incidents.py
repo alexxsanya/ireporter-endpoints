@@ -38,29 +38,6 @@ class TestIncidentsAPI:
         result = json.loads(response.data)  
         assert "Missing Authorization Header" == result['msg']
         assert response.status_code == 401            
-    def test_create_incident_without_id_failing(self,client,user_token):
-        token = user_token 
-        incident = {   #without id
-            "title": "Police man asking for a bribe ", 
-            "comment": "Police man asking for a bribe just to see my friend who is an inmate",
-            "location": "0.374242,3285338",
-            "images": [
-                "d:\\img1.jpg",
-                "d:\\img3.jpg",
-                "d:\\img3.jpg"
-            ],
-            "status": "under investigation",
-            "createdOn": "13-Nov-2018",
-            "createdBy": 4
-        }         
-        response = client.post('/api/v1/redflags',
-                                json=incident,
-                                content_type='application/json',
-                                headers=dict(Authorization='Bearer ' + token))  
-        result = json.loads(response.data)     
-        assert "The created incident must have an valid id with it" == result['message'] 
-        assert response.status_code == 400
-    
     def test_create_incident_without_location_failing(self,client,user_token):
         token = user_token 
         incident = {    
@@ -180,7 +157,7 @@ class TestIncidentsAPI:
         token = user_token 
         response = client.get('api/v1/redflags/432823',headers=dict(Authorization='Bearer ' + token))
         data = json.loads(response.data)  
-        assert data['status'] == 200 
+        assert data['status'] == 400 
         assert data['message'] == "No data found for the provided ID"
     
     def test_update_comment_success(self,client,user_token):
@@ -207,7 +184,7 @@ class TestIncidentsAPI:
         response = client.patch("/api/v1/redflags/4734/location",content_type='application/json',json=location, headers=dict(Authorization='Bearer ' + token))
         data = json.loads(response.data) 
         assert data['error'] == "Location not modified"
-        assert data['status'] == 204    
+        assert data['status'] == 200 
 
     def test_update_location_success(self,client,user_token):
         token = user_token 
@@ -233,4 +210,4 @@ class TestIncidentsAPI:
         data = json.loads(response.data)  
         assert "No record found with the provided id" == data['message']
         assert red_flag_id == data['id']
-        assert data['status'] == 204
+        assert data['status'] == 200
