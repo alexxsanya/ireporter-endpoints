@@ -1,8 +1,7 @@
 import pytest
 import json 
 
-incident = {
-	"idd":"45",
+incident = { 
     "title": "Police man asking for a bribe",
     "ttype": "red-flag",
     "comment": "Police man asking for a bribe just to see my friend who is an inmate",
@@ -33,15 +32,16 @@ class TestIncidentsAPI:
         result = json.loads(response.data)  
         assert "Incident has been created" == result['message']
         assert response.status_code == 201, "Incident is created" 
+
     def test_create_incident_fails_when_auth_header_not_set(self,client) : 
         response = client.post('/api/v1/redflags', json=incident, content_type='application/json')   
         result = json.loads(response.data)  
         assert "Missing Authorization Header" == result['msg']
         assert response.status_code == 401            
+
     def test_create_incident_without_location_failing(self,client,user_token):
         token = user_token 
-        incident = {    
-            "idd":"57",
+        incident = {     
             "title": "Police man asking for a bribe",
             "ttype": "red-flag", 
             "comment": "Police man asking for a bribe just to see my friend who is an inmate", 
@@ -63,11 +63,33 @@ class TestIncidentsAPI:
         assert "location must be filled and must be a string in the form 'lat,long' " == result['message'] 
         assert response.status_code == 400  
 
+    def test_create_incident_without_title_failing(self,client, user_token ):
+        token = user_token 
+        incident = {   
+            "ttype": "red-flag",
+            "comment": "Police man asking for a bribe just to see my friend who is an inmate",
+            "location": "0.3742423285338",
+            "images": [
+                "d:\\img1.jpg",
+                "d:\\img3.jpg",
+                "d:\\img3.jpg"
+            ], 
+            "status":"fhf",
+            "createdOn": "13-Nov-2018",
+            "createdBy": 4
+        }       
+        response = client.post('/api/v1/redflags',
+                                json=incident,
+                                content_type='application/json',
+                                headers=dict(Authorization='Bearer ' + token))      
+        result = json.loads(response.data)     
+        assert "Title must be filled in appropriately" == result['message'] 
+        assert response.status_code == 400   
+
     def test_create_incident_without_status_failing(self,client, user_token ):
         token = user_token 
-        incident = { 
-            "idd":"87",
-            "title": "Police man asking for a bribe",
+        incident = {   
+            "title":"dhsfjshsjs js",
             "ttype": "red-flag",
             "comment": "Police man asking for a bribe just to see my friend who is an inmate",
             "location": "0.3742423285338",
@@ -88,10 +110,10 @@ class TestIncidentsAPI:
         assert "status must be either (draft, resolved, rejected,under investigation)" == result['message'] 
         assert response.status_code == 400   
 
+
     def test_create_incident_invalid_comment_failing(self,client,user_token):
         token = user_token 
-        incident = { 
-            "idd":"67",
+        incident = {  
             "title": "Police man asking for a bribe",
             "ttype": "red-flag",
             "comment": 6785768576,
@@ -119,8 +141,7 @@ class TestIncidentsAPI:
 
     def test_incorrect_incident_type_input(self, client, user_token): 
         token = user_token 
-        incident = {
-            "idd":"95",
+        incident = { 
             "title": "Police man asking for a bribe",
             "ttype": "flagged",
             "comment": "Police man asking for a bribe just to see my friend who is an inmate",
