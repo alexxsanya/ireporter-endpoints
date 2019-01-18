@@ -86,16 +86,16 @@ def login_user():
                 'refresh_token': refresh_token
             }), 200
 
-        return jsonify({"status": 404, "error": "Invalid username or password"}), 404
+        return jsonify({"status": 400, "error": "Invalid username or password"}), 400
 
 @bluep.route('/redflags', methods=['GET'])
 @jwt_required
 def get_all_red_flags(): 
         if len(incidents) <= 0:
             return jsonify({
-                "Status": 404,
+                "Status": 400,
                 "error": "No incident records in the database yet"
-            }), 404
+            }), 400
         else:
             return jsonify({'status':200,'data': incidents})
 
@@ -106,7 +106,7 @@ def get_this_red_flag(red_flag_id):
     if result != []:
         return jsonify({'status':200,'data': result}) 
     else:
-        return jsonify({'status':200,'message':"No data found for the provided ID"})    
+        return jsonify({'status':400,'message':"No data found for the provided ID"})    
 
 @bluep.route('/redflags', methods = ['POST'])
 @jwt_required
@@ -151,7 +151,7 @@ def update_red_flag_location(red_flag_id):
     if updated:
         return jsonify({'status':200,'comment': "Location has been successfully update"})
     else:
-        return jsonify({'status':204,'error': "Location not modified"})
+        return jsonify({'status':200,'error': "Location not modified"})
 
 @bluep.route('/redflags/<int:red_flag_id>/comment', methods = ['PATCH'])
 @jwt_required
@@ -185,4 +185,4 @@ def delete_red_flag(red_flag_id):
             incidents.remove(flag_to_delete[0])
             return jsonify({'status':200,'id':red_flag_id,'message':"The record has been deleted successfully"}) 
     except IndexError:     
-        return jsonify({'status':204 ,'id':red_flag_id,'message':'No record found with the provided id'}) 
+        return jsonify({'status':200 ,'id':red_flag_id,'message':'No record found with the provided id'}) 
