@@ -114,8 +114,7 @@ def create_this_red_flag():
     redflag_data = request.get_json()
     if (incidentValidator.validate_incident(redflag_data)):
 
-        incidents.append({ 
-            "idd": 4,
+        incidents.append({  
             "title" : redflag_data['title'],
             "ttype" : redflag_data['ttype'],
             "comment" : redflag_data['comment'],
