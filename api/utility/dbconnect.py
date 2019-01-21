@@ -1,5 +1,8 @@
 import psycopg2
 from api.utility.config import config
+from api.models.users import Users
+
+user = Users.userdb
 class Database():
  
     def __init__(self,conn=None):
@@ -28,7 +31,9 @@ class Database():
                     email varchar(50) NOT NULL UNIQUE,
                     phonenumber varchar(12) NOT NULL UNIQUE,
                     username varchar(12) NOT NULL UNIQUE,
-                    isadmin BOOLEAN NOT NULL
+                    password varchar(250) NOT NULL,
+                    isadmin BOOLEAN NOT NULL,
+                    registered TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 )
             """,
             """
@@ -65,8 +70,30 @@ class Database():
             cur.close()
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
-    def add_user():
-        pass
+    def add_user(self,user):
+        try:
+            user = user[0]
+            
+            f_name = user['firstname']
+            l_name =user['lastname']
+            o_name = user['othername']
+            email = user['email']
+            p_number = user['phonenumber']
+            u_name = user['username']
+            p_word = user['password']
+            is_admin = user['isadmin']
+            print(f_name)
+            script = """
+                        INSERT INTO users (firstname,lastname,othername,email,phonenumber,username,password,isadmin)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s);
+                    """
+            cur = self.conn.cursor()
+            cur.execute(script,(f_name,l_name,o_name,email,p_number,u_name,p_word,is_admin))
+            self.conn.commit()
+            cur.close
+            print("user has been successfully added")
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
     def get_user():
         pass
     def add_incident():
@@ -82,3 +109,4 @@ class Database():
         pass
     def delete_incident():
         pass
+        
