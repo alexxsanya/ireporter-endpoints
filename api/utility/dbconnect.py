@@ -53,14 +53,18 @@ class Database():
                 )                
             """
         )
-        # create a cursor
-        cur = self.conn.cursor() 
-        # execute a statement 
-        for table in tables:
-            cur.execute(table) 
-       # commit the changes
-        self.conn.commit()
-        cur.close()
+
+        try:
+            # create a cursor
+            cur = self.conn.cursor() 
+            # execute a statement 
+            for table in tables:
+                cur.execute(table) 
+            # commit the changes
+            self.conn.commit()
+            cur.close()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
     def add_user():
         pass
     def get_user():
