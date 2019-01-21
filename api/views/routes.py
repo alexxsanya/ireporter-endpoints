@@ -6,12 +6,15 @@ from api.utility.validate_incident import IncidentValidator
 from api.utility.validate_user import UserValidator
 from werkzeug.security import generate_password_hash, check_password_hash
 #from flask_jwt_extended import (create_access_token)
+from api.utility.dbconnect import Database
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 bluep = Blueprint("bluep", __name__)
 incidents = Incidents.incidentsdb
 users  = Users.userdb 
 incidentValidator = IncidentValidator()
 userValidator = UserValidator()
+db = Database()
+db.create_tables() #testing that it run
 
 @bluep.route('/user', methods = ['POST'])
 def create_user(): 
