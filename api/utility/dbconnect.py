@@ -18,13 +18,48 @@ class Database():
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
     def create_tables(self): 
+        tables = (
+            """
+                CREATE TABLE IF NOT EXISTS users(
+                    id serial PRIMARY KEY,
+                    firstname varchar(25) NOT NULL,
+                    lastname varchar(25) NOT NULL,
+                    othername varchar(25),
+                    email varchar(50) NOT NULL UNIQUE,
+                    phonenumber varchar(12) NOT NULL UNIQUE,
+                    username varchar(12) NOT NULL UNIQUE,
+                    isadmin BOOLEAN NOT NULL
+                )
+            """,
+            """
+                CREATE TABLE IF NOT EXISTS incidents(
+                    id serial NOT NULL PRIMARY KEY,
+                    createdon TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    createdby INT NOT NULL,
+                    type varchar(25), 
+                    location varchar(50) NOT NULL,
+                    status varchar(12) NOT NULL UNIQUE,
+                    comment varchar(12) NOT NULL UNIQUE,
+                    FOREIGN KEY (createdby) REFERENCES users (id)
+                )
+            """,
+            """
+                CREATE TABLE IF NOT EXISTS incidents_images(
+                    owner INT NOT NULL,
+                    filename CHARACTER VARYING(255) NOT NULL,
+                    mime_type CHARACTER VARYING(255) NOT NULL,
+                    file_data BYTEA NOT NULL, 
+                    FOREIGN KEY (owner) REFERENCES incidents(id)
+                )                
+            """
+        )
         # create a cursor
         cur = self.conn.cursor() 
         # execute a statement 
-        cur.execute('SELECT version()')
-        # display the PostgreSQL database server version
-        db_version =   cur.fetchone()
-        print(db_version) 
+        for table in tables:
+            cur.execute(table) 
+       # commit the changes
+        self.conn.commit()
         cur.close()
     def add_user():
         pass
