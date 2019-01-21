@@ -8,10 +8,10 @@ class Users:
         "lastname" : "Ssanya",
         "othername" : "",
         "email" : "alexxsanya@gmail.com",
-        "phonenumber" : "+256702342257",
+        "phonenumber" : "256702342257",
         "username" : "alexxa",
         "password": generate_password_hash('uganda256', method='sha256'),
         "registered" : str(datetime.datetime.now()), #TimeTamp
-        "isAdmin" : False # Boolean
+        "isadmin" : False # Boolean
     }
 ]
