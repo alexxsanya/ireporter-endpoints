@@ -1,5 +1,5 @@
 from flask import Flask, render_template
-from api.views.__init__ import bluep
+from api.views.routes import bluep
 from flask_jwt_extended import JWTManager
 import os, datetime
 app = Flask(__name__) 

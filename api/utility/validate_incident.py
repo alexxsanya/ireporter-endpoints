@@ -5,13 +5,13 @@ incident_types = ("red-flag", "investigation")
 class IncidentValidator:
     def __init__(self):
         pass
-    def validate_incident(self, incidentObject): 
-        if 'idd' not in incidentObject or incidentObject['idd'] == '' or incidentObject['idd'] is int:
+    def validate_incident(self, incidentObject):
+        if 'title' not in incidentObject or incidentObject['title'] == '' or incidentObject['title'] is int:
             abort(make_response(jsonify({
                 "status": 400,
-                "message": "The created incident must have an valid id with it"
+                "message": "Title must be filled in appropriately"
             }), 400))
-            
+           
         if 'ttype' not in incidentObject or incidentObject['ttype'] == '' or incidentObject['ttype'] is int or incidentObject['ttype'] not in incident_types:
             abort(make_response(jsonify({
                 "status": 400,
