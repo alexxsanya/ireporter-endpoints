@@ -15,7 +15,7 @@ incidentValidator = IncidentValidator()
 userValidator = UserValidator()
 db = Database()
 db.create_tables() #testing that it run
-
+db.add_user(users)
 @bluep.route('/user', methods = ['POST'])
 def create_user(): 
     user_data_object = request.get_json()
