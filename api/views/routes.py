@@ -91,15 +91,16 @@ def login_user():
         return jsonify({"status": 400, "error": "Invalid username or password"}), 400
 
 @bluep.route('/redflags', methods=['GET'])
-@jwt_required
+#@jwt_required
 def get_all_red_flags(): 
-        if len(incidents) <= 0:
-            return jsonify({
-                "Status": 400,
-                "error": "No incident records in the database yet"
-            }), 400
-        else:
-            return jsonify({'status':200,'data': incidents})
+    incidents = db.get_all_incidents()
+    if len(incidents) <= 0:
+        return jsonify({
+            "Status": 400,
+            "error": "No incident records in the database yet"
+        }), 400
+    else:
+        return jsonify({'status':200,'data': incidents})
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['GET'])
 #@jwt_required
