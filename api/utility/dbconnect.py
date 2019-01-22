@@ -96,10 +96,28 @@ class Database():
             print(error)
     def get_user():
         pass
-    def add_incident():
-        pass
+    def add_incident(self,**incident):
+        try:
+            print(incident) 
+            i_title = incident['title']
+            i_type = incident['type']
+            i_comment =incident['comment']
+            i_status = incident['status']
+            i_createdby = incident['createdby'] 
+            i_location = incident['location'] 
+
+            script = """INSERT INTO incidents (title,type,comment,status,createdby,location)
+                        VALUES (%s,%s,%s,%s,%s,%s);
+                    """
+            cur = self.conn.cursor()
+            cur.execute(script,(i_title,i_type,i_comment,i_status,i_createdby,i_location))
+            self.conn.commit()
+            cur.close
+            print("Incident has been successfully created")
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
     def get_incident():
-        pass
+        pass 
     def get_all_incidents():
         pass
     def update_incident():
