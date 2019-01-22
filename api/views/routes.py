@@ -60,10 +60,10 @@ def create_user():
             'message': query_status
         })
 
-@bluep.route('/user/<int:user_id>', methods=['DELETE']):
+@bluep.route('/user/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
     pass
-    
+
 @bluep.route('/login', methods = ['POST'])
 def login_user():
     data = request.get_json()
