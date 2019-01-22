@@ -63,7 +63,17 @@ def create_user():
 @bluep.route('/user/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
     pass
-
+@bluep.route("/admin/allusers",methods=['GET'])
+def get_all_users():
+    
+    users = db.get_all_user()
+    if len(incidents) <= 0:
+        return jsonify({
+            "Status": 400,
+            "error": "No users records in the database yet"
+        }), 400
+    else:
+        return jsonify({'status':200,'data': users})
 @bluep.route('/login', methods = ['POST'])
 def login_user():
     data = request.get_json()
