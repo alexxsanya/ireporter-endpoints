@@ -186,9 +186,10 @@ class Database():
             self.conn = psycopg2.connect(**params) #connecting
             cur = self.conn.cursor()
             cur.execute(script)
+            updated_rows = cur.rowcount 
             self.conn.commit()
-            cur.close
-            return "success";
+            cur.close 
+            return "success" 
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             return("Not created") 

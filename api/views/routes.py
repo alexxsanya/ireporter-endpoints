@@ -66,7 +66,8 @@ def delete_user(user_id):
     if query_status > 0:
         return jsonify({'status':200,'id':user_id,'message':"The user has been deleted successfully"}) 
     else:
-        return jsonify({'status':200 ,'id':user_id,'message':'No record found with the provided id'})  
+        return jsonify({'status':200 ,'id':user_id,'message':'No record found with the provided id'})    
+
 
 @bluep.route("/admin/allusers",methods=['GET'])
 def get_all_users():
@@ -153,6 +154,7 @@ def create_flag():
                 'message': query_status
             }) 
 
+@bluep.route('/admin/incident/status/<int:red_flag_id>', methods = ['PATCH'])
 @bluep.route('/redflags/<int:red_flag_id>/comment', methods = ['PATCH'])
 @bluep.route('/redflags/<int:red_flag_id>/location', methods = ['PATCH'])
 #@jwt_required
@@ -163,12 +165,15 @@ def update_incident(red_flag_id):
         what_to_update = "comment"
     elif("location" in rule.rule):
         what_to_update = "location"
+    elif("status" in rule.rule):
+        what_to_update = "status"
+        print(what_to_update)
     
     if (what_to_update in request_data and len(request_data[what_to_update]) > 5 ):
         #(self,what_to_update,user_id,update_with):
         query_status = db.update_incident(what_to_update,red_flag_id,request_data[what_to_update])
-    if query_status == "success":
-        return jsonify({'status':200,'comment': "The {} has been updated successfully".format(what_to_update)})
+        if query_status == "success":
+            return jsonify({'status':200,'comment': "The {} has been updated successfully".format(what_to_update)})
     else:
         return jsonify({'status':200,'comment': "{} has not been modified".format(what_to_update), 'tip':'cross-check the user id'})
 
