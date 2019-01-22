@@ -60,12 +60,17 @@ def create_user():
             'message': query_status
         })
 
-@bluep.route('/user/<int:user_id>', methods=['DELETE'])
+@bluep.route('/admin/user/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
-    pass
+    query_status = db.delete_user(user_id)
+    if query_status > 0:
+        return jsonify({'status':200,'id':user_id,'message':"The user has been deleted successfully"}) 
+    else:
+        return jsonify({'status':200 ,'id':user_id,'message':'No record found with the provided id'})  
+
 @bluep.route("/admin/allusers",methods=['GET'])
 def get_all_users():
-    
+
     users = db.get_all_user()
     if len(incidents) <= 0:
         return jsonify({
@@ -74,6 +79,7 @@ def get_all_users():
         }), 400
     else:
         return jsonify({'status':200,'data': users})
+
 @bluep.route('/login', methods = ['POST'])
 def login_user():
     data = request.get_json()
