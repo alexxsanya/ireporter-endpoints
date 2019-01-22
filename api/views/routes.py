@@ -14,10 +14,7 @@ users  = Users.userdb
 incidentValidator = IncidentValidator()
 userValidator = UserValidator()
 db = Database()
-db.create_tables() #testing that it run
-#db.add_user(users)
-incident = dict(incidents[0])
-db.add_incident(**incident)
+db.create_tables() #testing that it run 
 @bluep.route('/user', methods = ['POST'])
 def create_user(): 
     user_data_object = request.get_json()
@@ -33,39 +30,28 @@ def create_user():
        #print(item[0] + " -> "+ item[1])
        userValidator.validate_user(item[0],user_data_object[item[0]], item[1])
 
-    for user in users:
-        if user['username'] == user_data_object['username']:
-                return jsonify({
-                    "status": 400,
-                    "error": "User name already exists"
-                }), 400
-
     if not user_data_object['password']  or len(user_data_object['password']) < 8:
             return jsonify({
                 "status": 400,
                 "error": "Password is required & must be atleast 8 characters"
             }), 400
 
-    users.append({ 
-        "id": 4,
-        "firstname" : user_data_object['firstname'],
-        "lastname" : user_data_object['lastname'],
-        "othername" : user_data_object['othername'],
-        "email" : user_data_object['email'],
-        "username" : user_data_object['username'],
-        "password": generate_password_hash(user_data_object['password'], method='sha256'),
-        "phonenumber" : user_data_object['phonenumber'],
-        "registered" : str(datetime.datetime.now()),
-        "isAdmin" : user_data_object['isAdmin'],
-    })
-    access_token = create_access_token(identity = user_data_object['username'])
-    refresh_token = create_refresh_token(identity = user_data_object['username'])
-    return Response(json.dumps({
-        "status" : 201,
-        "comment": "User - "+ str(user_data_object['username']) +"has been created",
-        "access_token": access_token,
-        'refresh_token': refresh_token
-    }), 201, mimetype="application/json")  
+    query_status = db.add_user(**user_data_object)  
+    if(query_status == "success"):
+        access_token = create_access_token(identity = user_data_object['username'])
+        refresh_token = create_refresh_token(identity = user_data_object['username'])
+        return Response(json.dumps({
+            "status" : 201,
+            "comment": "User - "+ str(user_data_object['username']) +"has been created",
+            "access_token": access_token,
+            'refresh_token': refresh_token,
+            "query_status":query_status
+        }), 201, mimetype="application/json")  
+    else:
+        return jsonify({
+            'status':400,
+            'message': query_status
+        })
 
 @bluep.route('/login', methods = ['POST'])
 def login_user():
@@ -118,22 +104,17 @@ def get_this_red_flag(red_flag_id):
 def create_this_red_flag(): 
     redflag_data = request.get_json()
     if (incidentValidator.validate_incident(redflag_data)):
-
-        incidents.append({ 
-            "idd": 4,
-            "title" : redflag_data['title'],
-            "ttype" : redflag_data['ttype'],
-            "comment" : redflag_data['comment'],
-            "location" : redflag_data['location'],
-            "images" : redflag_data['images'],
-            "status" : redflag_data['status'],
-            "createdOn" : str(datetime.datetime.now())[:10],
-            "createdBy" : redflag_data['createdBy'],
-        }) 
-        return jsonify({
-                "status": 201,
-                "message": "Incident has been created", 
-            }), 201
+        query_status = db.add_incident(**redflag_data)
+        if(query_status == "success"): 
+            return jsonify({
+                    "status": 201,
+                    "message": "Incident has been created", 
+                }), 20
+        else:
+            return jsonify({
+                'status':400,
+                'message': query_status
+            }) 
 
 @bluep.route('/redflags/<int:red_flag_id>/location', methods = ['PATCH'])
 @jwt_required
