@@ -119,10 +119,22 @@ class Database():
         pass 
     def get_all_incidents():
         pass
-    def update_incident():
-        #update status by admin
-        #update comment by user
-        #update location by user
+    def update_incident(self,what_to_update,user_id,update_with):
+        #what_to_update can be location, comment or status
+        try: 
+            script = """
+                        UPDATE incidents SET {} = '{}' WHERE id = '{}';
+                    """ .format(what_to_update,update_with,user_id)
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            self.conn.commit()
+            cur.close
+            return "success";
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            return("Not created")
         pass
     def delete_incident():
         pass
