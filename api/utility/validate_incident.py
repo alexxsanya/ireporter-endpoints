@@ -12,7 +12,7 @@ class IncidentValidator:
                 "message": "Title must be filled in appropriately"
             }), 400))
            
-        if 'ttype' not in incidentObject or incidentObject['ttype'] == '' or incidentObject['ttype'] is int or incidentObject['ttype'] not in incident_types:
+        if 'type' not in incidentObject or incidentObject['type'] == '' or incidentObject['type'] is int or incidentObject['type'] not in incident_types:
             abort(make_response(jsonify({
                 "status": 400,
                 "message": "Incident_type must be either a red-flag or Intervention record"
