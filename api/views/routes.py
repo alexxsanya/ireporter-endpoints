@@ -154,13 +154,12 @@ def update_incident(red_flag_id):
     else:
         return jsonify({'status':200,'comment': "{} has not been modified".format(what_to_update), 'tip':'cross-check the user id'})
 
-@bluep.route('/redflags/<int:red_flag_id>', methods = ['DELETE'])
-@jwt_required
-def delete_red_flag(red_flag_id):
-    try:
-        flag_to_delete = [flag for flag in incidents if flag['idd'] == red_flag_id]
-        if flag_to_delete is not None:
-            incidents.remove(flag_to_delete[0])
-            return jsonify({'status':200,'id':red_flag_id,'message':"The record has been deleted successfully"}) 
-    except IndexError:     
-        return jsonify({'status':200 ,'id':red_flag_id,'message':'No record found with the provided id'})
+@bluep.route('/redflags/<int:flag_id>', methods = ['DELETE'])
+@bluep.route('/intervention/<int:flag_id>', methods = ['DELETE'])
+#@jwt_required
+def delete_red_flag(flag_id):
+    query_status = db.delete_incident(flag_id)
+    if query_status == "success":
+        return jsonify({'status':200,'id':flag_id,'message':"The record has been deleted successfully"}) 
+    else:
+        return jsonify({'status':200 ,'id':flag_id,'message':'No record found with the provided id'})       
