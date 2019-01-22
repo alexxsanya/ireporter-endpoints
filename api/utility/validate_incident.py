@@ -1,6 +1,6 @@
 from flask import jsonify, make_response, abort
 statuses = ("draft", "resolved", "rejected","under investigation")
-incident_types = ("red-flag", "investigation")
+incident_types = ("red-flag", "intervention")
 
 class IncidentValidator:
     def __init__(self):
