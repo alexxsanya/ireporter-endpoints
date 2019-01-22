@@ -60,6 +60,10 @@ def create_user():
             'message': query_status
         })
 
+@bluep.route('/user/<int:user_id>', methods=['DELETE']):
+def delete_user(user_id):
+    pass
+    
 @bluep.route('/login', methods = ['POST'])
 def login_user():
     data = request.get_json()
@@ -186,4 +190,4 @@ def delete_red_flag(red_flag_id):
             incidents.remove(flag_to_delete[0])
             return jsonify({'status':200,'id':red_flag_id,'message':"The record has been deleted successfully"}) 
     except IndexError:     
-        return jsonify({'status':200 ,'id':red_flag_id,'message':'No record found with the provided id'}) 
+        return jsonify({'status':200 ,'id':red_flag_id,'message':'No record found with the provided id'})
