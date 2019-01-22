@@ -73,8 +73,22 @@ class Database():
             else:
                 print("Create User Error >> {}".format(error))
                 return "error occured contact admin"
-    def get_user():
-        pass
+    def get_all_user(self):
+        try: 
+            script = """
+                        SELECT * FROM users
+                    """
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            result = cur.fetchall()
+            self.conn.rollback() 
+            cur.close  
+            return result
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            print("No data")
     def check_user_is_unique(self, **user):
         try: 
             email = user['email']
