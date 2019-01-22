@@ -131,8 +131,22 @@ class Database():
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             print("No data")
-    def get_all_incidents():
-        pass
+    def get_all_incidents(self):
+        try: 
+            script = """
+                        SELECT * FROM incidents
+                    """
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            result = cur.fetchall()
+            self.conn.rollback() 
+            cur.close  
+            return result
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            print("No data")
     def update_incident(self,what_to_update,user_id,update_with):
         #what_to_update can be location, comment or status
         try: 
