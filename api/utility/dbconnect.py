@@ -134,8 +134,21 @@ class Database():
             return "success";
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
-            return("Not created")
-        pass
-    def delete_incident():
-        pass
+            return("Not created") 
+    def delete_incident(self,incident_id):
+        #what_to_update can be location, comment or status
+        try: 
+            script = """
+                        DELETE FROM incidents WHERE id  = '{}';
+                    """ .format(incident_id)
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            self.conn.commit()
+            cur.close
+            return "success";
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            return("Not created") 
         
