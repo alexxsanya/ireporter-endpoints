@@ -15,9 +15,16 @@ incidentValidator = IncidentValidator()
 userValidator = UserValidator()
 db = Database()
 db.create_tables() #testing that it run 
+@bluep.route('/admin/signup', methods = ['POST'])
 @bluep.route('/user', methods = ['POST'])
-def create_user(): 
+def create_user():  
     user_data_object = request.get_json()
+    rule = request.url_rule
+    if("admin" in rule.rule):
+        user_data_object['isadmin'] = True
+    else:
+        user_data_object['isadmin'] = False
+    print(user_data_object)
     to_validate = [ ["firstname", "Firstname is required & must be a string" ],
                 ["lastname", "Lastname is required"],
                 ["othername", "Othernames is required and must be a string"],
@@ -52,6 +59,10 @@ def create_user():
             'status':400,
             'message': query_status
         })
+
+@bluep.route('/user/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    pass
 
 @bluep.route('/login', methods = ['POST'])
 def login_user():
@@ -100,9 +111,17 @@ def get_this_red_flag(red_flag_id):
         return jsonify({'status':400,'message':"No data found for the provided ID"})    
 
 @bluep.route('/redflags', methods = ['POST'])
-@jwt_required
-def create_this_red_flag(): 
+@bluep.route('/intervention', methods = ['POST'])
+#@jwt_required
+def create_flag(): 
     redflag_data = request.get_json()
+
+    rule = request.url_rule
+    if("redflags" in rule.rule):
+        redflag_data['type'] = "red-flag"
+    else:
+        redflag_data['type'] = "intervention"
+
     if (incidentValidator.validate_incident(redflag_data)):
         query_status = db.add_incident(**redflag_data)
         if(query_status == "success"): 
@@ -171,4 +190,4 @@ def delete_red_flag(red_flag_id):
             incidents.remove(flag_to_delete[0])
             return jsonify({'status':200,'id':red_flag_id,'message':"The record has been deleted successfully"}) 
     except IndexError:     
-        return jsonify({'status':200 ,'id':red_flag_id,'message':'No record found with the provided id'}) 
+        return jsonify({'status':200 ,'id':red_flag_id,'message':'No record found with the provided id'})
