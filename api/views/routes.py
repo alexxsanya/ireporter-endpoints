@@ -135,51 +135,24 @@ def create_flag():
                 'message': query_status
             }) 
 
-@bluep.route('/redflags/<int:red_flag_id>/location', methods = ['PATCH'])
-@jwt_required
-def update_red_flag_location(red_flag_id):
-    location_data = request.get_json()
-    
-    updated_location = {}
-    updated = False
-
-    if ("location" in location_data):
-
-        updated_location["location"] = location_data["location"] 
-
-        for red_flag in incidents:
-
-            if red_flag["idd"] == red_flag_id:
-
-                red_flag.update(updated_location) 
-                updated = True
-    if updated:
-        return jsonify({'status':200,'comment': "Location has been successfully update"})
-    else:
-        return jsonify({'status':200,'error': "Location not modified"})
-
 @bluep.route('/redflags/<int:red_flag_id>/comment', methods = ['PATCH'])
-@jwt_required
-def update_red_flag_comment(red_flag_id):
+@bluep.route('/redflags/<int:red_flag_id>/location', methods = ['PATCH'])
+#@jwt_required
+def update_incident(red_flag_id):
     request_data = request.get_json()
+    rule = request.url_rule
+    if("comment" in rule.rule):
+        what_to_update = "comment"
+    elif("location" in rule.rule):
+        what_to_update = "location"
     
-    updated_incident = {}
-    updated = False
-
-    if ("comment" in request_data and len(request_data["comment"]) > 5 ):
-
-        updated_incident["comment"] = request_data["comment"] 
-
-        for red_flag in incidents:
-
-            if red_flag["idd"] == red_flag_id:
-
-                red_flag.update(updated_incident) 
-                updated = True
-    if updated:
-        return jsonify({'status':200,'comment': "The comment has been updated successfully"})
+    if (what_to_update in request_data and len(request_data[what_to_update]) > 5 ):
+        #(self,what_to_update,user_id,update_with):
+        query_status = db.update_incident(what_to_update,red_flag_id,request_data[what_to_update])
+    if query_status == "success":
+        return jsonify({'status':200,'comment': "The {} has been updated successfully".format(what_to_update)})
     else:
-        return jsonify({'status':200,'comment': "Comment has not been modified", 'tip':'cross-check the user id'})
+        return jsonify({'status':200,'comment': "{} has not been modified".format(what_to_update), 'tip':'cross-check the user id'})
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['DELETE'])
 @jwt_required
