@@ -115,8 +115,22 @@ class Database():
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             return("Not created")
-    def get_incident():
-        pass 
+    def get_incident(self,incident_id):
+        try: 
+            script = """
+                        SELECT * FROM incidents WHERE id = {}
+                    """.format(incident_id) 
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            result = cur.fetchone()
+            self.conn.rollback() 
+            cur.close  
+            return result
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            print("No data")
     def get_all_incidents():
         pass
     def update_incident(self,what_to_update,user_id,update_with):
@@ -135,20 +149,19 @@ class Database():
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             return("Not created") 
-    def delete_incident(self,incident_id):
-        #what_to_update can be location, comment or status
+    def delete_incident(self,incident_id): 
         try: 
             script = """
-                        DELETE FROM incidents WHERE id  = '{}';
+                        DELETE FROM incidents WHERE id ='{}';
                     """ .format(incident_id)
             params = config() # read connection parameters from config file 
             self.conn = psycopg2.connect(**params) #connecting
             cur = self.conn.cursor()
             cur.execute(script)
+            rows_deleted = cur.rowcount 
             self.conn.commit()
             cur.close
-            return "success";
+            return rows_deleted;
         except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-            return("Not created") 
+            print(error) 
         
