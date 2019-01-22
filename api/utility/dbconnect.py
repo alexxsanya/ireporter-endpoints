@@ -89,6 +89,21 @@ class Database():
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             print("No data")
+    def delete_user(self,user_id): 
+        try: 
+            script = """
+                        DELETE FROM users WHERE id ='{}';
+                    """ .format(user_id)
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            rows_deleted = cur.rowcount 
+            self.conn.commit()
+            cur.close
+            return rows_deleted;
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)     
     def check_user_is_unique(self, **user):
         try: 
             email = user['email']
