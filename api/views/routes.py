@@ -102,11 +102,12 @@ def get_all_red_flags():
             return jsonify({'status':200,'data': incidents})
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['GET'])
-@jwt_required
+#@jwt_required
 def get_this_red_flag(red_flag_id):   
-    result = [item for item in incidents if item['idd'] == red_flag_id]
-    if result != []:
-        return jsonify({'status':200,'data': result}) 
+    query_status = db.get_incident(red_flag_id) 
+    print(query_status)
+    if query_status != None:
+        return jsonify({'status':200,'data': query_status}) 
     else:
         return jsonify({'status':400,'message':"No data found for the provided ID"})    
 
@@ -159,7 +160,7 @@ def update_incident(red_flag_id):
 #@jwt_required
 def delete_red_flag(flag_id):
     query_status = db.delete_incident(flag_id)
-    if query_status == "success":
+    if query_status > 0:
         return jsonify({'status':200,'id':flag_id,'message':"The record has been deleted successfully"}) 
     else:
         return jsonify({'status':200 ,'id':flag_id,'message':'No record found with the provided id'})       
