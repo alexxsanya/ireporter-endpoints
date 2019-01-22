@@ -107,9 +107,17 @@ def get_this_red_flag(red_flag_id):
         return jsonify({'status':400,'message':"No data found for the provided ID"})    
 
 @bluep.route('/redflags', methods = ['POST'])
-@jwt_required
-def create_this_red_flag(): 
+@bluep.route('/intervention', methods = ['POST'])
+#@jwt_required
+def create_flag(): 
     redflag_data = request.get_json()
+
+    rule = request.url_rule
+    if("redflags" in rule.rule):
+        redflag_data['type'] = "red-flag"
+    else:
+        redflag_data['type'] = "intervention"
+
     if (incidentValidator.validate_incident(redflag_data)):
         query_status = db.add_incident(**redflag_data)
         if(query_status == "success"): 
