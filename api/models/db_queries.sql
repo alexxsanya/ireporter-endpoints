@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS incidents(
     createdby INT NOT NULL,
     type varchar(25), 
     location varchar(50) NOT NULL,
-    status varchar(12) NOT NULL UNIQUE,
+    status varchar(12) NOT NULL,
     comment varchar(12) NOT NULL UNIQUE,
     FOREIGN KEY (createdby) REFERENCES users (id)
     ON UPDATE CASCADE ON DELETE CASCADE
