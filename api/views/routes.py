@@ -15,9 +15,16 @@ incidentValidator = IncidentValidator()
 userValidator = UserValidator()
 db = Database()
 db.create_tables() #testing that it run 
+@bluep.route('/admin/signup', methods = ['POST'])
 @bluep.route('/user', methods = ['POST'])
-def create_user(): 
+def create_user():  
     user_data_object = request.get_json()
+    rule = request.url_rule
+    if("admin" in rule.rule):
+        user_data_object['isadmin'] = True
+    else:
+        user_data_object['isadmin'] = False
+    print(user_data_object)
     to_validate = [ ["firstname", "Firstname is required & must be a string" ],
                 ["lastname", "Lastname is required"],
                 ["othername", "Othernames is required and must be a string"],
