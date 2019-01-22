@@ -1,5 +1,6 @@
 import psycopg2
 from api.utility.config import config
+from werkzeug.security import generate_password_hash
 from api.models.users import Users
 
 user = Users.userdb
@@ -10,6 +11,8 @@ class Database():
         try:
             params = config() # read connection parameters from config file 
             self.conn = psycopg2.connect(**params) #connecting
+            self.conn.autocommit = False
+            #self.conn.setAutoCommit(true);
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
  
@@ -21,101 +24,97 @@ class Database():
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
     def create_tables(self): 
-        tables = (
-            """
-                CREATE TABLE IF NOT EXISTS users(
-                    id serial PRIMARY KEY,
-                    firstname varchar(25) NOT NULL,
-                    lastname varchar(25) NOT NULL,
-                    othername varchar(25),
-                    email varchar(50) NOT NULL UNIQUE,
-                    phonenumber varchar(12) NOT NULL UNIQUE,
-                    username varchar(12) NOT NULL UNIQUE,
-                    password varchar(250) NOT NULL,
-                    isadmin BOOLEAN NOT NULL,
-                    registered TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                )
-            """,
-            """
-                CREATE TABLE IF NOT EXISTS incidents(
-                    id serial NOT NULL PRIMARY KEY,
-                    createdon TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                    createdby INT NOT NULL,
-                    type varchar(25), 
-                    location varchar(50) NOT NULL,
-                    status varchar(12) NOT NULL UNIQUE,
-                    comment varchar(12) NOT NULL UNIQUE,
-                    FOREIGN KEY (createdby) REFERENCES users (id)
-                )
-            """,
-            """
-                CREATE TABLE IF NOT EXISTS incidents_images(
-                    owner INT NOT NULL,
-                    filename CHARACTER VARYING(255) NOT NULL,
-                    mime_type CHARACTER VARYING(255) NOT NULL,
-                    file_data BYTEA NOT NULL, 
-                    FOREIGN KEY (owner) REFERENCES incidents(id)
-                )                
-            """
-        )
-
         try:
             # create a cursor
             cur = self.conn.cursor() 
-            # execute a statement 
-            for table in tables:
-                cur.execute(table) 
+            # execute a statement in the sql file
+            sql_file = open('api/models/db_queries.sql','r') 
+            cur.execute(sql_file.read())
             # commit the changes
             self.conn.commit()
             cur.close()
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
-    def add_user(self,user):
-        try:
-            user = user[0]
-            
+    def add_user(self,**user):
+        try:           
             f_name = user['firstname']
             l_name =user['lastname']
             o_name = user['othername']
             email = user['email']
             p_number = user['phonenumber']
             u_name = user['username']
-            p_word = user['password']
-            is_admin = user['isadmin']
-            print(f_name)
-            script = """
-                        INSERT INTO users (firstname,lastname,othername,email,phonenumber,username,password,isadmin)
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s);
-                    """
-            cur = self.conn.cursor()
-            cur.execute(script,(f_name,l_name,o_name,email,p_number,u_name,p_word,is_admin))
-            self.conn.commit()
-            cur.close
-            print("user has been successfully added")
+            p_word = generate_password_hash(user['password'], method='sha256')
+            is_admin = user.get('isadmin')
+            
+            #check if user doesn't exist
+            user_exist = self.check_user_is_unique(**user)
+            print("user exists status {} ".format(user_exist))
+            if type(user_exist) is int: 
+                script = """
+                            INSERT INTO users (firstname,lastname,othername,email,phonenumber,username,password,isadmin)
+                            VALUES ('{}','{}','{}','{}','{}','{}','{}',{})
+
+                        """.format(f_name,l_name,o_name,email,p_number,u_name,p_word,is_admin) 
+                params = config() # read connection parameters from config file 
+                self.conn = psycopg2.connect(**params) #connecting
+                cur = self.conn.cursor()
+                cur.execute(script) 
+                self.conn.commit() 
+                return "success"
+            else:
+                return(user_exist)
         except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
+            if "email" in str(error):
+                return "Email already exists"   
+            elif "username" in str(error):
+                return "Username already exist"
+            elif "phonenumber" in str(error):
+                return "Phone Number already exist"
+            else:
+                print("Create User Error >> {}".format(error))
+                return "error occured contact admin"
     def get_user():
         pass
+    def check_user_is_unique(self, **user):
+        try: 
+            email = user['email']
+            p_number = user['phonenumber']
+            u_name = user['username'] 
+            script = """
+                        SELECT * FROM users WHERE email = '{}' OR phonenumber= '{}' OR username = '{}'
+                    """.format(email,p_number,u_name) 
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            result = cur.rowcount
+            self.conn.rollback() 
+            cur.close 
+            return result
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
     def add_incident(self,**incident):
-        try:
-            print(incident) 
+        try: 
             i_title = incident['title']
             i_type = incident['type']
             i_comment =incident['comment']
             i_status = incident['status']
             i_createdby = incident['createdby'] 
-            i_location = incident['location'] 
-
-            script = """INSERT INTO incidents (title,type,comment,status,createdby,location)
+            i_location = incident['location']  
+            script = """
+                        INSERT INTO incidents (title,type,comment,status,createdby,location)
                         VALUES (%s,%s,%s,%s,%s,%s);
-                    """
+                    """ 
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
             cur = self.conn.cursor()
             cur.execute(script,(i_title,i_type,i_comment,i_status,i_createdby,i_location))
             self.conn.commit()
             cur.close
-            print("Incident has been successfully created")
+            return "success";
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+            return("Not created")
     def get_incident():
         pass 
     def get_all_incidents():
