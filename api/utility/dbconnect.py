@@ -1,6 +1,6 @@
 import psycopg2
 from api.utility.config import config
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash,check_password_hash
 from api.models.users import Users
 
 user = Users.userdb
@@ -212,4 +212,23 @@ class Database():
             return rows_deleted;
         except (Exception, psycopg2.DatabaseError) as error:
             print(error) 
-        
+    def login_user(self,**user):
+        password = user['password'] 
+        try: 
+            script = """
+                        SELECT username,password,isadmin,id FROM users WHERE username ='{}' OR email = '{}';
+                    """ .format(user['username'],user['username'])
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script) 
+            data = cur.fetchone()
+            status = check_password_hash(data[1], password)
+            self.conn.commit()
+            cur.close  
+            if status:
+                print("Login match")
+                return data
+            return ["failed"]
+        except (Exception, psycopg2.DatabaseError) as error:
+            return ["failed"]
