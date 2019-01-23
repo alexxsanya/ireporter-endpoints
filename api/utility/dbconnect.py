@@ -187,12 +187,16 @@ class Database():
             cur = self.conn.cursor()
             cur.execute(script)
             updated_rows = cur.rowcount 
+            if updated_rows == 1:
+                result = True
+            else:
+                result = False 
             self.conn.commit()
             cur.close 
-            return "success" 
+            return result
         except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-            return("Not created") 
+            print(error) 
+            return False
     def delete_incident(self,incident_id): 
         try: 
             script = """
