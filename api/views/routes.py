@@ -60,9 +60,26 @@ def create_user():
             'message': query_status
         })
 
-@bluep.route('/user/<int:user_id>', methods=['DELETE'])
+@bluep.route('/admin/user/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
-    pass
+    query_status = db.delete_user(user_id)
+    if query_status > 0:
+        return jsonify({'status':200,'id':user_id,'message':"The user has been deleted successfully"}) 
+    else:
+        return jsonify({'status':200 ,'id':user_id,'message':'No record found with the provided id'})    
+
+
+@bluep.route("/admin/allusers",methods=['GET'])
+def get_all_users():
+
+    users = db.get_all_user()
+    if len(incidents) <= 0:
+        return jsonify({
+            "Status": 400,
+            "error": "No users records in the database yet"
+        }), 400
+    else:
+        return jsonify({'status':200,'data': users})
 
 @bluep.route('/login', methods = ['POST'])
 def login_user():
@@ -91,22 +108,24 @@ def login_user():
         return jsonify({"status": 400, "error": "Invalid username or password"}), 400
 
 @bluep.route('/redflags', methods=['GET'])
-@jwt_required
+#@jwt_required
 def get_all_red_flags(): 
-        if len(incidents) <= 0:
-            return jsonify({
-                "Status": 400,
-                "error": "No incident records in the database yet"
-            }), 400
-        else:
-            return jsonify({'status':200,'data': incidents})
+    incidents = db.get_all_incidents()
+    if len(incidents) <= 0:
+        return jsonify({
+            "Status": 400,
+            "error": "No incident records in the database yet"
+        }), 400
+    else:
+        return jsonify({'status':200,'data': incidents})
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['GET'])
-@jwt_required
+#@jwt_required
 def get_this_red_flag(red_flag_id):   
-    result = [item for item in incidents if item['idd'] == red_flag_id]
-    if result != []:
-        return jsonify({'status':200,'data': result}) 
+    query_status = db.get_incident(red_flag_id) 
+    print(query_status)
+    if query_status != None:
+        return jsonify({'status':200,'data': query_status}) 
     else:
         return jsonify({'status':400,'message':"No data found for the provided ID"})    
 
@@ -135,59 +154,49 @@ def create_flag():
                 'message': query_status
             }) 
 
-@bluep.route('/redflags/<int:red_flag_id>/location', methods = ['PATCH'])
-@jwt_required
-def update_red_flag_location(red_flag_id):
-    location_data = request.get_json()
-    
-    updated_location = {}
-    updated = False
-
-    if ("location" in location_data):
-
-        updated_location["location"] = location_data["location"] 
-
-        for red_flag in incidents:
-
-            if red_flag["idd"] == red_flag_id:
-
-                red_flag.update(updated_location) 
-                updated = True
-    if updated:
-        return jsonify({'status':200,'comment': "Location has been successfully update"})
-    else:
-        return jsonify({'status':200,'error': "Location not modified"})
-
+@bluep.route('/admin/incident/status/<int:red_flag_id>', methods = ['PATCH'])
 @bluep.route('/redflags/<int:red_flag_id>/comment', methods = ['PATCH'])
-@jwt_required
-def update_red_flag_comment(red_flag_id):
+@bluep.route('/redflags/<int:red_flag_id>/location', methods = ['PATCH'])
+#@jwt_required
+def update_incident(red_flag_id):
     request_data = request.get_json()
+    rule = request.url_rule
+    if("comment" in rule.rule):
+        what_to_update = "comment"
+    elif("location" in rule.rule):
+        what_to_update = "location"
+    elif("status" in rule.rule):
+        what_to_update = "status"
+        print(what_to_update)
     
-    updated_incident = {}
-    updated = False
+    if (what_to_update in request_data and len(request_data[what_to_update]) > 5 ):
+        #(self,what_to_update,user_id,update_with):
+        d_status = db.update_incident(what_to_update,red_flag_id,request_data[what_to_update])
 
-    if ("comment" in request_data and len(request_data["comment"]) > 5 ):
-
-        updated_incident["comment"] = request_data["comment"] 
-
-        for red_flag in incidents:
-
-            if red_flag["idd"] == red_flag_id:
-
-                red_flag.update(updated_incident) 
-                updated = True
-    if updated:
-        return jsonify({'status':200,'comment': "The comment has been updated successfully"})
+        if(d_status):
+            return jsonify({
+            'status':200,
+            'comment': "The {} has been updated successfully".format(what_to_update)
+            })
+        else:
+            return jsonify({
+                'status':200,
+                'comment': "{} not updated, No Incident record found with provided id {}".format(what_to_update,red_flag_id), 
+                'tip':'cross-check the user id'
+            })
     else:
-        return jsonify({'status':200,'comment': "Comment has not been modified", 'tip':'cross-check the user id'})
+        return jsonify({
+            'status':200,
+            'comment': "{} has not been modified".format(what_to_update), 
+            'tip':'cross-check the user id'
+        })
 
-@bluep.route('/redflags/<int:red_flag_id>', methods = ['DELETE'])
-@jwt_required
-def delete_red_flag(red_flag_id):
-    try:
-        flag_to_delete = [flag for flag in incidents if flag['idd'] == red_flag_id]
-        if flag_to_delete is not None:
-            incidents.remove(flag_to_delete[0])
-            return jsonify({'status':200,'id':red_flag_id,'message':"The record has been deleted successfully"}) 
-    except IndexError:     
-        return jsonify({'status':200 ,'id':red_flag_id,'message':'No record found with the provided id'})
+@bluep.route('/redflags/<int:flag_id>', methods = ['DELETE'])
+@bluep.route('/intervention/<int:flag_id>', methods = ['DELETE'])
+#@jwt_required
+def delete_red_flag(flag_id):
+    query_status = db.delete_incident(flag_id)
+    if query_status > 0:
+        return jsonify({'status':200,'id':flag_id,'message':"The record has been deleted successfully"}) 
+    else:
+        return jsonify({'status':200 ,'id':flag_id,'message':'No record found with the provided id'})       

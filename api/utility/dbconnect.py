@@ -73,8 +73,37 @@ class Database():
             else:
                 print("Create User Error >> {}".format(error))
                 return "error occured contact admin"
-    def get_user():
-        pass
+    def get_all_user(self):
+        try: 
+            script = """
+                        SELECT * FROM users
+                    """
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            result = cur.fetchall()
+            self.conn.rollback() 
+            cur.close  
+            return result
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            print("No data")
+    def delete_user(self,user_id): 
+        try: 
+            script = """
+                        DELETE FROM users WHERE id ='{}';
+                    """ .format(user_id)
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            rows_deleted = cur.rowcount 
+            self.conn.commit()
+            cur.close
+            return rows_deleted;
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)     
     def check_user_is_unique(self, **user):
         try: 
             email = user['email']
@@ -115,15 +144,72 @@ class Database():
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             return("Not created")
-    def get_incident():
-        pass 
-    def get_all_incidents():
-        pass
-    def update_incident():
-        #update status by admin
-        #update comment by user
-        #update location by user
-        pass
-    def delete_incident():
-        pass
+    def get_incident(self,incident_id):
+        try: 
+            script = """
+                        SELECT * FROM incidents WHERE id = {}
+                    """.format(incident_id) 
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            result = cur.fetchone()
+            self.conn.rollback() 
+            cur.close  
+            return result
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            print("No data")
+    def get_all_incidents(self):
+        try: 
+            script = """
+                        SELECT * FROM incidents
+                    """
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            result = cur.fetchall()
+            self.conn.rollback() 
+            cur.close  
+            return result
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            print("No data")
+    def update_incident(self,what_to_update,user_id,update_with):
+        #what_to_update can be location, comment or status
+        try: 
+            script = """
+                        UPDATE incidents SET {} = '{}' WHERE id = '{}';
+                    """ .format(what_to_update,update_with,user_id)
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            updated_rows = cur.rowcount 
+            if updated_rows == 1:
+                result = True
+            else:
+                result = False 
+            self.conn.commit()
+            cur.close 
+            return result
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error) 
+            return False
+    def delete_incident(self,incident_id): 
+        try: 
+            script = """
+                        DELETE FROM incidents WHERE id ='{}';
+                    """ .format(incident_id)
+            params = config() # read connection parameters from config file 
+            self.conn = psycopg2.connect(**params) #connecting
+            cur = self.conn.cursor()
+            cur.execute(script)
+            rows_deleted = cur.rowcount 
+            self.conn.commit()
+            cur.close
+            return rows_deleted;
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error) 
         
