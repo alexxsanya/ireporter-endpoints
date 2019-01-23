@@ -1,19 +1,15 @@
 from flask import Blueprint,jsonify, request, Response,g
-import datetime,json
-from api.models.incidents import Incidents
-from api.models.users import Users
+import datetime,json 
 from api.utility.validate_incident import IncidentValidator
 from api.utility.validate_user import UserValidator
 from werkzeug.security import generate_password_hash, check_password_hash
 from api.utility.jwt_auth import Auth
-from api.utility.dbconnect import Database
+from api.utility.queries import DB_Queries
 bluep = Blueprint("bluep", __name__)
-incidents = Incidents.incidentsdb
-users  = Users.userdb 
+
 incidentValidator = IncidentValidator()
 userValidator = UserValidator()
-db = Database()
-db.create_tables() #testing that it run 
+db = DB_Queries() 
 auth = Auth()
 @bluep.route('/admin/signup', methods = ['POST'])
 @bluep.route('/user', methods = ['POST'])
@@ -32,7 +28,6 @@ def create_user():
             })   
     else:
         user_data_object['isadmin'] = False
-    print(user_data_object)
     to_validate = [ ["firstname", "Firstname is required & must be a string" ],
                 ["lastname", "Lastname is required"],
                 ["othername", "Othernames is required and must be a string"],
@@ -58,7 +53,7 @@ def create_user():
         return Response(json.dumps({
             "status" : 201,
             "comment": "User - "+ str(user_data_object['username']) +"has been created",
-            "access_token": access_token
+            "access_token": access_token.decode('utf-8')
         }), 201, mimetype="application/json")  
     else:
         return jsonify({
@@ -78,11 +73,12 @@ def delete_user(user_id):
 
 
 @bluep.route("/admin/allusers",methods=['GET'])
-@auth.jwt_required
-@auth.admin_only
+#@auth.jwt_required
+#@auth.admin_only
 def get_all_users():
     users = db.get_all_user()
-    if len(incidents) <= 0:
+    return users
+    if len(users) <= 0:
         return jsonify({
             "Status": 400,
             "error": "No users records in the database yet"
