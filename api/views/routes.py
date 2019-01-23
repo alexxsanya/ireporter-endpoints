@@ -1,13 +1,12 @@
-from flask import Blueprint,jsonify, request, Response
+from flask import Blueprint,jsonify, request, Response,g
 import datetime,json
 from api.models.incidents import Incidents
 from api.models.users import Users
 from api.utility.validate_incident import IncidentValidator
 from api.utility.validate_user import UserValidator
 from werkzeug.security import generate_password_hash, check_password_hash
-#from flask_jwt_extended import (create_access_token)
+from api.utility.jwt_auth import Auth
 from api.utility.dbconnect import Database
-from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 bluep = Blueprint("bluep", __name__)
 incidents = Incidents.incidentsdb
 users  = Users.userdb 
@@ -15,13 +14,22 @@ incidentValidator = IncidentValidator()
 userValidator = UserValidator()
 db = Database()
 db.create_tables() #testing that it run 
+auth = Auth()
 @bluep.route('/admin/signup', methods = ['POST'])
 @bluep.route('/user', methods = ['POST'])
 def create_user():  
     user_data_object = request.get_json()
     rule = request.url_rule
     if("admin" in rule.rule):
-        user_data_object['isadmin'] = True
+        token = request.headers.get('authorization')
+        is_admin = auth.is_admin_check(token) 
+        if is_admin == True:
+            user_data_object['isadmin'] = True
+        else:
+            return jsonify({
+                'status':401,
+                'message':"Only Admins are unauthorized to access this page"
+            })   
     else:
         user_data_object['isadmin'] = False
     print(user_data_object)
@@ -45,14 +53,12 @@ def create_user():
 
     query_status = db.add_user(**user_data_object)  
     if(query_status == "success"):
-        access_token = create_access_token(identity = user_data_object['username'])
-        refresh_token = create_refresh_token(identity = user_data_object['username'])
+        g.user = user_data_object["username"]
+        access_token = auth.encode_token(user_data_object['username'],user_data_object['isadmin']) 
         return Response(json.dumps({
             "status" : 201,
             "comment": "User - "+ str(user_data_object['username']) +"has been created",
-            "access_token": access_token,
-            'refresh_token': refresh_token,
-            "query_status":query_status
+            "access_token": access_token
         }), 201, mimetype="application/json")  
     else:
         return jsonify({
@@ -61,6 +67,8 @@ def create_user():
         })
 
 @bluep.route('/admin/user/<int:user_id>', methods=['DELETE'])
+@auth.jwt_required
+@auth.admin_only
 def delete_user(user_id):
     query_status = db.delete_user(user_id)
     if query_status > 0:
@@ -70,8 +78,9 @@ def delete_user(user_id):
 
 
 @bluep.route("/admin/allusers",methods=['GET'])
+@auth.jwt_required
+@auth.admin_only
 def get_all_users():
-
     users = db.get_all_user()
     if len(incidents) <= 0:
         return jsonify({
@@ -83,32 +92,25 @@ def get_all_users():
 
 @bluep.route('/login', methods = ['POST'])
 def login_user():
-    data = request.get_json()
-    print(data)
+    data = request.get_json() 
     username = data['username']
     password = data['password']
-
     userValidator.validate_login(username, "username is required")
     userValidator.validate_login(password, "Password has not been supplied")
-    for user in users: 
-        print(check_password_hash(user['password'], password))
-        print(user['username'] == username)
-        if user['username'] == username and check_password_hash(user['password'], password):
-            #access_token = create_access_token(username)
-            access_token = create_access_token(identity = username)
-            refresh_token = create_refresh_token(identity = username)
-            print(user)
-            return jsonify({
+    login_status = db.login_user(**data) 
+    if login_status[0] != "failed":
+        auth.username = login_status[0] 
+        #<username,isadmin>
+        access_token = auth.encode_token(login_status[0],login_status[2]) 
+        return jsonify({
                 "status": 200,
                 "status": "Login successful",
-                "access_token": access_token,
-                'refresh_token': refresh_token
+                "access_token": access_token.decode("utf-8")
             }), 200
-
-        return jsonify({"status": 400, "error": "Invalid username or password"}), 400
+    return jsonify({"status": 400, "error": "Invalid username or password"}), 400
 
 @bluep.route('/redflags', methods=['GET'])
-#@jwt_required
+@auth.jwt_required
 def get_all_red_flags(): 
     incidents = db.get_all_incidents()
     if len(incidents) <= 0:
@@ -120,10 +122,9 @@ def get_all_red_flags():
         return jsonify({'status':200,'data': incidents})
 
 @bluep.route('/redflags/<int:red_flag_id>', methods = ['GET'])
-#@jwt_required
+@auth.jwt_required
 def get_this_red_flag(red_flag_id):   
-    query_status = db.get_incident(red_flag_id) 
-    print(query_status)
+    query_status = db.get_incident(red_flag_id)  
     if query_status != None:
         return jsonify({'status':200,'data': query_status}) 
     else:
@@ -131,7 +132,7 @@ def get_this_red_flag(red_flag_id):
 
 @bluep.route('/redflags', methods = ['POST'])
 @bluep.route('/intervention', methods = ['POST'])
-#@jwt_required
+@auth.jwt_required
 def create_flag(): 
     redflag_data = request.get_json()
 
@@ -157,7 +158,7 @@ def create_flag():
 @bluep.route('/admin/incident/status/<int:red_flag_id>', methods = ['PATCH'])
 @bluep.route('/redflags/<int:red_flag_id>/comment', methods = ['PATCH'])
 @bluep.route('/redflags/<int:red_flag_id>/location', methods = ['PATCH'])
-#@jwt_required
+@auth.jwt_required
 def update_incident(red_flag_id):
     request_data = request.get_json()
     rule = request.url_rule
@@ -167,7 +168,15 @@ def update_incident(red_flag_id):
         what_to_update = "location"
     elif("status" in rule.rule):
         what_to_update = "status"
-        print(what_to_update)
+        token = request.headers.get('authorization')
+        is_admin = auth.is_admin_check(token) 
+        if is_admin == True:
+            user_data_object['isadmin'] = True
+        else:
+            return jsonify({
+                'status':401,
+                'message':"Only Admins are unauthorized to access this page"
+            })  
     
     if (what_to_update in request_data and len(request_data[what_to_update]) > 5 ):
         #(self,what_to_update,user_id,update_with):
@@ -193,7 +202,7 @@ def update_incident(red_flag_id):
 
 @bluep.route('/redflags/<int:flag_id>', methods = ['DELETE'])
 @bluep.route('/intervention/<int:flag_id>', methods = ['DELETE'])
-#@jwt_required
+@auth.jwt_required
 def delete_red_flag(flag_id):
     query_status = db.delete_incident(flag_id)
     if query_status > 0:
