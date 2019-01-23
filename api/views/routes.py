@@ -171,11 +171,25 @@ def update_incident(red_flag_id):
     
     if (what_to_update in request_data and len(request_data[what_to_update]) > 5 ):
         #(self,what_to_update,user_id,update_with):
-        query_status = db.update_incident(what_to_update,red_flag_id,request_data[what_to_update])
-        if query_status == "success":
-            return jsonify({'status':200,'comment': "The {} has been updated successfully".format(what_to_update)})
+        d_status = db.update_incident(what_to_update,red_flag_id,request_data[what_to_update])
+
+        if(d_status):
+            return jsonify({
+            'status':200,
+            'comment': "The {} has been updated successfully".format(what_to_update)
+            })
+        else:
+            return jsonify({
+                'status':200,
+                'comment': "{} not updated, No Incident record found with provided id {}".format(what_to_update,red_flag_id), 
+                'tip':'cross-check the user id'
+            })
     else:
-        return jsonify({'status':200,'comment': "{} has not been modified".format(what_to_update), 'tip':'cross-check the user id'})
+        return jsonify({
+            'status':200,
+            'comment': "{} has not been modified".format(what_to_update), 
+            'tip':'cross-check the user id'
+        })
 
 @bluep.route('/redflags/<int:flag_id>', methods = ['DELETE'])
 @bluep.route('/intervention/<int:flag_id>', methods = ['DELETE'])
