@@ -26,7 +26,7 @@ class DB_Queries():
                             VALUES ('{}','{}','{}','{}','{}','{}','{}',{})
 
                         """.format(f_name,l_name,o_name,email,p_number,u_name,p_word,is_admin)   
-                cursor.execute(script) 
+                self.cursor.execute(script) 
                 return "success"
             else:
                 return(user_exist)
@@ -91,11 +91,11 @@ class DB_Queries():
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             return("Not created")
-    def get_incident(self,incident_id):
+    def get_incident(self,incident_id,incident_type):
         try: 
             script = """
-                        SELECT * FROM incidents WHERE id = {}
-                    """.format(incident_id) 
+                        SELECT * FROM incidents WHERE id = {} AND type='{}'
+                    """.format(incident_id,incident_type) 
             self.cursor.execute(script)
             result = self.cursor.fetchone()
             self.conn.rollback()  
@@ -103,11 +103,11 @@ class DB_Queries():
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             print("No data")
-    def get_all_incidents(self):
+    def get_all_incidents(self,incident_type):
         try: 
             script = """
-                        SELECT * FROM incidents
-                    """
+                        SELECT * FROM incidents WHERE type={}
+                    """.format(incident_type)
             self.cursor.execute(script)
             result = self.cursor.fetchall()
             self.conn.rollback() 
@@ -115,18 +115,21 @@ class DB_Queries():
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             print("No data")
-    def update_incident(self,what_to_update,user_id,update_with):
+    def update_incident(self,what_to_update,incident_id,update_with,updated_by):
         try: 
             script = """
-                        UPDATE incidents SET {} = '{}' WHERE id = '{}';
-                    """ .format(what_to_update,update_with,user_id)  
+                        UPDATE incidents SET 
+                                {} = '{}', updatedby='{}' 
+                                WHERE id = {} RETURNING *;
+                    """ .format(what_to_update,update_with,updated_by,incident_id)  
             self.cursor.execute(script)
             updated_rows = self.cursor.rowcount 
-            if updated_rows == 1:
-                result = True
-            else:
-                result = False 
-            return result
+            incident = self.cursor.fetchone()
+            user_data = self.get_user_by_id(incident['createdby'])
+            incident["updated_rows"] = updated_rows 
+            incident["by_name"] = user_data['firstname']
+            incident['email'] = user_data['email']
+            return incident
         except (Exception, psycopg2.DatabaseError) as error:
             print(error) 
             return False
@@ -156,3 +159,16 @@ class DB_Queries():
         except (Exception, psycopg2.DatabaseError) as error:
             return ["{}".format(error),"failed"]
             print(error)
+    def get_user_by_id(self,user_id):
+        try: 
+            script = """
+                        SELECT firstname,email FROM users WHERE id = {}
+                    """.format(user_id)
+            self.cursor.execute(script)
+            result = self.cursor.fetchone()
+            
+            self.conn.rollback() 
+            return result
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            print("No data")
