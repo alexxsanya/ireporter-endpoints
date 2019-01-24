@@ -42,7 +42,7 @@ class Auth():
                 pass
             else:
                 return jsonify({
-                    'status':401,
+                    'status':403,
                     'message':"Only Admins are unauthorized to access this page"
                 })          
             return f(*args, **kwargs)
@@ -52,7 +52,7 @@ class Auth():
     def encode_token(user_name,isadmin):  
         try:
             payload = {
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0,minutes=30, seconds=10),
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30),
                 'iat': datetime.datetime.utcnow(),
                 'sub': user_name,
                 'isadmin':isadmin
