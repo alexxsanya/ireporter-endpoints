@@ -5,12 +5,13 @@ from api.utility.validate_user import UserValidator
 from werkzeug.security import generate_password_hash, check_password_hash
 from api.utility.jwt_auth import Auth
 from api.utility.queries import DB_Queries
-bluep = Blueprint("bluep", __name__)
 
+bluep = Blueprint("bluep", __name__)
 incidentValidator = IncidentValidator()
 userValidator = UserValidator()
 db = DB_Queries() 
 auth = Auth()
+
 @bluep.route('/admin/signup', methods = ['POST'])
 @bluep.route('/user', methods = ['POST'])
 def create_user():  
@@ -71,13 +72,11 @@ def delete_user(user_id):
     else:
         return jsonify({'status':200 ,'id':user_id,'message':'No record found with the provided id'})    
 
-
 @bluep.route("/admin/allusers",methods=['GET'])
-#@auth.jwt_required
-#@auth.admin_only
+@auth.jwt_required
+@auth.admin_only
 def get_all_users():
     users = db.get_all_user()
-    return users
     if len(users) <= 0:
         return jsonify({
             "Status": 400,
@@ -94,10 +93,11 @@ def login_user():
     userValidator.validate_login(username, "username is required")
     userValidator.validate_login(password, "Password has not been supplied")
     login_status = db.login_user(**data) 
-    if login_status[0] != "failed":
-        auth.username = login_status[0] 
+    print(login_status)
+    if "failed" not in login_status:
+        auth.username = login_status['username'] 
         #<username,isadmin>
-        access_token = auth.encode_token(login_status[0],login_status[2]) 
+        access_token = auth.encode_token(login_status['username'],login_status['isadmin']) 
         return jsonify({
                 "status": 200,
                 "status": "Login successful",
@@ -205,3 +205,36 @@ def delete_red_flag(flag_id):
         return jsonify({'status':200,'id':flag_id,'message':"The record has been deleted successfully"}) 
     else:
         return jsonify({'status':200 ,'id':flag_id,'message':'No record found with the provided id'})       
+
+@bluep.app_errorhandler(404)
+def resource_not_found(error):
+    message={
+            "error":"Resource not found on the system",
+            "info":"visit resource documentation"
+        }
+    return jsonify({
+        "status":404,
+        "message":"message"
+    })
+
+@bluep.app_errorhandler(500)
+def sys_error_found(error):
+    message={
+            "error":"Resource not found on the system",
+            "info":"visit resource documentation"
+        }
+    return jsonify({
+        "status":404,
+        "message":"message"
+    })
+
+@bluep.app_errorhandler(403)
+def sys_error_found(error):
+    message={
+            "error":"Permission Error",
+            "info":"Login as admin"
+        }
+    return jsonify({
+        "status":404,
+        "message":"message"
+    })
