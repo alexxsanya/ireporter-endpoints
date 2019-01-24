@@ -7,6 +7,8 @@ def config():
         db['password'] = environ.get("PASSWORD")
         db['database'] = environ.get("DBNAME")
         db['port']= environ.get("PORT")
+
+        print(db)
         return db
     except Exception:
         raise Exception
