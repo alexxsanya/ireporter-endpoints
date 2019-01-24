@@ -1,18 +1,22 @@
-from flask import Blueprint,jsonify, request, Response,g
+from flask import Blueprint,jsonify, request, Response,g,abort
 import datetime,json 
 from api.utility.validate_incident import IncidentValidator
 from api.utility.validate_user import UserValidator
 from werkzeug.security import generate_password_hash, check_password_hash
 from api.utility.jwt_auth import Auth
 from api.utility.queries import DB_Queries
-
+from api.utility.mail_server import send_mail_notification
 bluep = Blueprint("bluep", __name__)
+
 incidentValidator = IncidentValidator()
+
 userValidator = UserValidator()
+
 db = DB_Queries() 
 auth = Auth()
+incident_type = ["red-flag","intervention"]
+updatable_fields = ["location","comment","status"]
 
-@bluep.route('/admin/signup', methods = ['POST'])
 @bluep.route('/user', methods = ['POST'])
 def create_user():  
     user_data_object = request.get_json()
@@ -24,7 +28,7 @@ def create_user():
             user_data_object['isadmin'] = True
         else:
             return jsonify({
-                'status':401,
+                'status':403,
                 'message':"Only Admins are unauthorized to access this page"
             })   
     else:
@@ -49,8 +53,10 @@ def create_user():
 
     query_status = db.add_user(**user_data_object)  
     if(query_status == "success"):
-        g.user = user_data_object["username"]
-        access_token = auth.encode_token(user_data_object['username'],user_data_object['isadmin']) 
+        
+        access_token = auth.encode_token(user_data_object['username'],
+                        user_data_object['isadmin'],
+                        user_data_object["id"]) 
         return Response(json.dumps({
             "status" : 201,
             "comment": "User - "+ str(user_data_object['username']) +"has been created",
@@ -62,7 +68,7 @@ def create_user():
             'message': query_status
         })
 
-@bluep.route('/admin/user/<int:user_id>', methods=['DELETE'])
+@bluep.route('/user/<int:user_id>', methods=['DELETE'])
 @auth.jwt_required
 @auth.admin_only
 def delete_user(user_id):
@@ -72,11 +78,12 @@ def delete_user(user_id):
     else:
         return jsonify({'status':200 ,'id':user_id,'message':'No record found with the provided id'})    
 
-@bluep.route("/admin/allusers",methods=['GET'])
+@bluep.route("/allusers",methods=['GET'])
 @auth.jwt_required
 @auth.admin_only
 def get_all_users():
     users = db.get_all_user()
+    return users
     if len(users) <= 0:
         return jsonify({
             "Status": 400,
@@ -93,11 +100,12 @@ def login_user():
     userValidator.validate_login(username, "username is required")
     userValidator.validate_login(password, "Password has not been supplied")
     login_status = db.login_user(**data) 
-    print(login_status)
     if "failed" not in login_status:
         auth.username = login_status['username'] 
         #<username,isadmin>
-        access_token = auth.encode_token(login_status['username'],login_status['isadmin']) 
+        access_token = auth.encode_token(login_status['username'],
+                        login_status['isadmin'],
+                        login_status["id"])  
         return jsonify({
                 "status": 200,
                 "status": "Login successful",
@@ -105,111 +113,154 @@ def login_user():
             }), 200
     return jsonify({"status": 400, "error": "Invalid username or password"}), 400
 
-@bluep.route('/redflags', methods=['GET'])
+@bluep.route('/<string:incident>', methods=['GET'])
 @auth.jwt_required
-def get_all_red_flags(): 
-    incidents = db.get_all_incidents()
-    if len(incidents) <= 0:
-        return jsonify({
-            "Status": 400,
-            "error": "No incident records in the database yet"
-        }), 400
-    else:
-        return jsonify({'status':200,'data': incidents})
-
-@bluep.route('/redflags/<int:red_flag_id>', methods = ['GET'])
-@auth.jwt_required
-def get_this_red_flag(red_flag_id):   
-    query_status = db.get_incident(red_flag_id)  
-    if query_status != None:
-        return jsonify({'status':200,'data': query_status}) 
-    else:
-        return jsonify({'status':400,'message':"No data found for the provided ID"})    
-
-@bluep.route('/redflags', methods = ['POST'])
-@bluep.route('/intervention', methods = ['POST'])
-@auth.jwt_required
-def create_flag(): 
-    redflag_data = request.get_json()
-
-    rule = request.url_rule
-    if("redflags" in rule.rule):
-        redflag_data['type'] = "red-flag"
-    else:
-        redflag_data['type'] = "intervention"
-
-    if (incidentValidator.validate_incident(redflag_data)):
-        query_status = db.add_incident(**redflag_data)
-        if(query_status == "success"): 
+def get_all_red_flags(incident): 
+    if incident in incident_type:
+        incidents = db.get_all_incidents(incident)
+        if len(incidents) <= 0:
             return jsonify({
-                    "status": 201,
-                    "message": "Incident has been created", 
-                }), 20
+                "Status": 400,
+                "error": "No incident records in the database yet"
+            }), 400
         else:
-            return jsonify({
-                'status':400,
-                'message': query_status
-            }) 
+            return jsonify({'status':200,'data': incidents})
+    else:
+        abort(400)
 
-@bluep.route('/admin/incident/status/<int:red_flag_id>', methods = ['PATCH'])
-@bluep.route('/redflags/<int:red_flag_id>/comment', methods = ['PATCH'])
-@bluep.route('/redflags/<int:red_flag_id>/location', methods = ['PATCH'])
+@bluep.route('/<string:incident>/<int:flag_id>', methods = ['GET'])
 @auth.jwt_required
-def update_incident(red_flag_id):
-    request_data = request.get_json()
-    rule = request.url_rule
-    if("comment" in rule.rule):
-        what_to_update = "comment"
-    elif("location" in rule.rule):
-        what_to_update = "location"
-    elif("status" in rule.rule):
-        what_to_update = "status"
-        token = request.headers.get('authorization')
-        is_admin = auth.is_admin_check(token) 
-        if is_admin == True:
-            user_data_object['isadmin'] = True
+def get_this_red_flag(incident,flag_id): 
+    if incident in incident_type:
+        query_status = db.get_incident(flag_id,incident)  
+        if query_status != None:
+            return jsonify({'status':200,'data': query_status}) 
         else:
-            return jsonify({
-                'status':401,
-                'message':"Only Admins are unauthorized to access this page"
-            })  
-    
-    if (what_to_update in request_data and len(request_data[what_to_update]) > 5 ):
-        #(self,what_to_update,user_id,update_with):
-        d_status = db.update_incident(what_to_update,red_flag_id,request_data[what_to_update])
+            return jsonify({'status':400,'message':"No data found for the provided ID"})  
+    else:
+        abort(404)  
 
-        if(d_status):
-            return jsonify({
-            'status':200,
-            'comment': "The {} has been updated successfully".format(what_to_update)
-            })
+@bluep.route('/<string:incident>', methods = ['POST'])
+@auth.jwt_required
+def create_flag(incident): 
+
+    if incident in incident_type:
+        redflag_data = request.get_json()
+
+        rule = request.url_rule
+        if("redflags" in rule.rule):
+            redflag_data['type'] = "red-flag"
+        else:
+            redflag_data['type'] = "intervention"
+
+        if (incidentValidator.validate_incident(redflag_data)):
+            query_status = db.add_incident(**redflag_data)
+            if(query_status == "success"): 
+                return jsonify({
+                        "status": 201,
+                        "message": "Incident has been created", 
+                    }), 20
+            else:
+                return jsonify({
+                    'status':400,
+                    'message': query_status
+                }) 
+    else:
+        abort(404)
+
+@bluep.route('/<string:incident>/<int:red_flag_id>/<string:field_to_update>', methods = ['PATCH']) 
+@auth.jwt_required
+def update_incidents(incident,red_flag_id,field_to_update):
+    if incident in incident_type and field_to_update in updatable_fields:
+        request_data = request.get_json() 
+        column = [column for column in updatable_fields if(column == field_to_update) ]
+        column_to_update = "".join(column)
+        token = request.headers.get('authorization') 
+        if(column_to_update == "status"): 
+            is_admin = auth.is_admin_check(token.encode("utf-8"))  
+            if is_admin == False:
+                return jsonify({
+                    'status':403,
+                    'message':"Only Admins are unauthorized to access this page"
+                })  
+        if (column_to_update in request_data):
+            #(self,column_to_update,user_id,update_with):
+            update_by = auth.return_user_id(token.encode("utf-8"))
+            d_status = db.update_incident(column_to_update,red_flag_id,
+                            request_data[column_to_update],
+                            update_by
+                            )
+            print(d_status)
+            if(int(d_status["updated_rows"]) == 1):
+                if column_to_update == "status":
+                    send_mail_notification(**d_status)
+                return jsonify({
+                'status':200,
+                'comment': "The {} has been updated successfully".format(column_to_update)
+                })
+            else:
+                return jsonify({
+                    'status':200,
+                    'comment': "{} not updated, No record found with provided id {}".format(column_to_update,red_flag_id), 
+                })
         else:
             return jsonify({
                 'status':200,
-                'comment': "{} not updated, No Incident record found with provided id {}".format(what_to_update,red_flag_id), 
+                'comment': "{} has not been modified".format(column_to_update), 
                 'tip':'cross-check the user id'
             })
     else:
-        return jsonify({
-            'status':200,
-            'comment': "{} has not been modified".format(what_to_update), 
-            'tip':'cross-check the user id'
-        })
+        abort(404)
 
-@bluep.route('/redflags/<int:flag_id>', methods = ['DELETE'])
-@bluep.route('/intervention/<int:flag_id>', methods = ['DELETE'])
+@bluep.route('/<string:incident>/<int:flag_id>', methods = ['DELETE'])
 @auth.jwt_required
-def delete_red_flag(flag_id):
-    query_status = db.delete_incident(flag_id)
-    if query_status > 0:
-        return jsonify({'status':200,'id':flag_id,'message':"The record has been deleted successfully"}) 
+def delete_red_flag(incident,flag_id):
+    if incident in incident_type:
+        query_status = db.delete_incident(flag_id)
+        if query_status > 0:
+            return jsonify({'status':200,'id':flag_id,'message':"The record has been deleted successfully"}) 
+        else:
+            return jsonify({'status':200 ,'id':flag_id,'message':'No record found with the provided id'}) 
     else:
-        return jsonify({'status':200 ,'id':flag_id,'message':'No record found with the provided id'})       
+        abort(404)      
 
 @bluep.app_errorhandler(404)
 def resource_not_found(error):
     message={
-            "error":"Resource not found on the system",
+            "error":"Requested resource not found on the system",
+            "info":"visit resource documentation"
+        }
+    return jsonify({
+        "status":404,
+        "message":message
+    })
+
+@bluep.app_errorhandler(400)
+def bad_request(error):
+    message={
+            "error":"Bad request made",
+            "info":"Check your request"
+        }
+    return jsonify({
+        "status":400,
+        "message":"message"
+    })
+
+@bluep.app_errorhandler(403)
+def permission_denied(error):
+    message={
+            "error":"permission_denied",
+            "info":"Admin privilege required"
+        }
+    return jsonify({
+        "status":404,
+        "message":"message"
+    })
+
+@bluep.app_errorhandler(405)
+def method_not_allowed(error):
+    message={
+            "error":"Method Not Allowed",
             "info":"visit resource documentation"
         }
     return jsonify({
@@ -219,21 +270,7 @@ def resource_not_found(error):
 
 @bluep.app_errorhandler(500)
 def sys_error_found(error):
-    message={
-            "error":"Resource not found on the system",
-            "info":"visit resource documentation"
-        }
-    return jsonify({
-        "status":404,
-        "message":"message"
-    })
-
-@bluep.app_errorhandler(403)
-def sys_error_found(error):
-    message={
-            "error":"Permission Error",
-            "info":"Login as admin"
-        }
+    
     return jsonify({
         "status":404,
         "message":"message"
