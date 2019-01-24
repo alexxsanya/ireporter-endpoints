@@ -1,7 +1,5 @@
 from flask import jsonify, make_response, abort 
-from api.models.users import Users
-import re
-users  = Users.userdb 
+import re 
 class UserValidator:
     def __init__(self):
         pass
@@ -20,14 +18,7 @@ class UserValidator:
                     abort(make_response(jsonify({
                         "status": 400,
                         "error": "email must be of the form (user@domain.xxx)"
-                    }), 400))  
-
-                for user in users: 
-                    if user['email'] == input_value: 
-                        abort(make_response(jsonify({
-                            "status": 400,
-                            "error": "The Supplied Email Address already exists"
-                        }), 400))  
+                    }), 400))   
 
             elif input_name == "phonenumber":
                 #ensure that no character is persent in the supplied number
