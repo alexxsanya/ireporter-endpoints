@@ -3,7 +3,9 @@ from werkzeug.security import generate_password_hash,check_password_hash
 import psycopg2
 
 class DB_Queries():
-
+    def __init__(self):
+        self.cursor = Database().cur
+        self.conn = Database().conn
     def add_user(self,**user):
         try:           
             f_name = user['firstname']
@@ -24,7 +26,7 @@ class DB_Queries():
                             VALUES ('{}','{}','{}','{}','{}','{}','{}',{})
 
                         """.format(f_name,l_name,o_name,email,p_number,u_name,p_word,is_admin)   
-                Database().cur.execute(script) 
+                cursor.execute(script) 
                 return "success"
             else:
                 return(user_exist)
@@ -38,23 +40,23 @@ class DB_Queries():
             else:
                 print("Create User Error >> {}".format(error))
                 return "error occured contact admin"
-    def get_all_user():
+    def get_all_user(self):
         try: 
             script = """
-                        SELECT * FROM users;
+                        SELECT firstname,lastname,othername,email,registered,username FROM users;
                     """
-            Database().cur.execute(script) 
-            return Database().cur.fetchall()
+            self.cursor.execute(script) 
+            return self.cursor.fetchall()
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
-            return []
+            return [str(error)]
     def delete_user(self,user_id): 
         try: 
             script = """
                         DELETE FROM users WHERE id ='{}';
                     """ .format(user_id) 
-            Database().cur.execute(script)
-            rows_deleted = Database().cur.rowcount   
+            self.cursor.execute(script)
+            rows_deleted = self.cursor.rowcount   
             return rows_deleted;
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)     
@@ -66,9 +68,9 @@ class DB_Queries():
             script = """
                         SELECT * FROM users WHERE email = '{}' OR phonenumber= '{}' OR username = '{}'
                     """.format(email,p_number,u_name) 
-            Database().cur.execute(script) 
-            result = Database().cur.rowcount
-            Database().conn.rollback()  
+            self.cursor.execute(script) 
+            result = self.cursor.rowcount
+            self.conn.rollback()  
             return result
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
@@ -84,7 +86,7 @@ class DB_Queries():
                         INSERT INTO incidents (title,type,comment,status,createdby,location)
                         VALUES (%s,%s,%s,%s,%s,%s);
                     """ 
-            Database().cur.execute(script,(i_title,i_type,i_comment,i_status,i_createdby,i_location))
+            self.cursor.execute(script,(i_title,i_type,i_comment,i_status,i_createdby,i_location))
             return "success";
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
@@ -94,9 +96,9 @@ class DB_Queries():
             script = """
                         SELECT * FROM incidents WHERE id = {}
                     """.format(incident_id) 
-            Database().cur.execute(script)
-            result = Database().cur.fetchone()
-            Database().conn.rollback()  
+            self.cursor.execute(script)
+            result = self.cursor.fetchone()
+            self.conn.rollback()  
             return result
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
@@ -106,21 +108,20 @@ class DB_Queries():
             script = """
                         SELECT * FROM incidents
                     """
-            Database().cur.execute(script)
-            result = Database().cur.fetchall()
-            Database().conn.rollback() 
+            self.cursor.execute(script)
+            result = self.cursor.fetchall()
+            self.conn.rollback() 
             return result
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             print("No data")
     def update_incident(self,what_to_update,user_id,update_with):
-        #what_to_update can be location, comment or status
         try: 
             script = """
                         UPDATE incidents SET {} = '{}' WHERE id = '{}';
                     """ .format(what_to_update,update_with,user_id)  
-            Database().cur.execute(script)
-            updated_rows = Database().cur.rowcount 
+            self.cursor.execute(script)
+            updated_rows = self.cursor.rowcount 
             if updated_rows == 1:
                 result = True
             else:
@@ -129,13 +130,13 @@ class DB_Queries():
         except (Exception, psycopg2.DatabaseError) as error:
             print(error) 
             return False
-    def delete_incident(self,incident_id): 
+    def delete_incident(self,incident_id):
         try: 
             script = """
                         DELETE FROM incidents WHERE id ='{}';
                     """ .format(incident_id)
-            Database().cur.execute(script)
-            rows_deleted = Database().cur.rowcount 
+            self.cursor.execute(script)
+            rows_deleted = self.cursor.rowcount 
             return rows_deleted;
         except (Exception, psycopg2.DatabaseError) as error:
             print(error) 
@@ -146,13 +147,12 @@ class DB_Queries():
                         SELECT username,password,isadmin,id FROM users WHERE username ='{}' OR email = '{}';
                     """ .format(user['username'],user['username'])
  
-            Database().cur.execute(script) 
-            data = Database().cur.fetchone()
-            status = check_password_hash(data['password'], password) 
-            print("status")
+            self.cursor.execute(script) 
+            data = self.cursor.fetchone()
+            status = check_password_hash(data['password'], password)  
             if status: 
                 return data
             return ["failed"]
         except (Exception, psycopg2.DatabaseError) as error:
-            return ["failed"]
+            return ["{}".format(error),"failed"]
             print(error)
